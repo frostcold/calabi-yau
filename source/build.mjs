@@ -1,0 +1,11 @@
+import { build } from 'esbuild';
+import fs from 'node:fs';
+const r = await build({ entryPoints: ['src/vendor.js'], bundle: true, minify: true, format: 'iife', write: false, target: 'es2020', legalComments: 'none' });
+let vendor = r.outputFiles[0].text.replace(/<\/script/gi, '<\\/script');
+const ver = JSON.parse(fs.readFileSync('node_modules/three/package.json', 'utf8')).version;
+vendor = `/*! three.js r${ver.split('.')[1]} (MIT License, https://threejs.org) — core + OrbitControls + EffectComposer/UnrealBloomPass, bundled & minified */\n` + vendor;
+const tpl = fs.readFileSync('src/index.html', 'utf8');
+if (!tpl.includes('/*__VENDOR__*/')) throw new Error('no vendor marker');
+const out = tpl.replace('/*__VENDOR__*/', () => vendor);
+fs.writeFileSync('dist/index.html', out);
+console.log('three', ver, 'vendor', (vendor.length / 1024).toFixed(0) + 'KB', 'html', (out.length / 1024).toFixed(0) + 'KB');

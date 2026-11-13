@@ -1,0 +1,2022 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#04050b">
+<title>卡拉比–丘流形 · Calabi–Yau Manifold</title>
+<style>
+:root{
+  --bg:#04050b; --ink:#eceffa; --mute:rgba(226,231,250,.62); --faint:rgba(226,231,250,.34);
+  --line:rgba(255,255,255,.085); --line2:rgba(255,255,255,.14);
+  --accent:#7fe3d4; --accent2:#b79cff; --panel-w:332px;
+  --sans:"PingFang SC","HarmonyOS Sans SC","MiSans","Microsoft YaHei UI","Microsoft YaHei","Noto Sans SC","Noto Sans CJK SC","Source Han Sans SC","WenQuanYi Micro Hei",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --serif:"Cormorant Garamond","Iowan Old Style","Palatino Linotype",Palatino,"Noto Serif SC","Noto Serif CJK SC","Source Han Serif SC","Songti SC","STSong","SimSun",Georgia,serif;
+  --num:"SF Mono","JetBrains Mono","Cascadia Code",ui-monospace,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);overflow:hidden;font-family:var(--sans);
+  -webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;overscroll-behavior:none}
+body{user-select:none;-webkit-user-select:none}
+#stage{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none;outline:none;cursor:grab;opacity:0;transition:opacity 1.6s ease}
+body.ready #stage{opacity:1}
+#stage:active{cursor:grabbing}
+button{font:inherit;color:inherit;background:none;border:0;padding:0;cursor:pointer}
+
+/* ---------- HUD ---------- */
+#hud{position:fixed;left:34px;top:30px;pointer-events:none;z-index:3;transition:opacity .6s,transform .6s cubic-bezier(.2,.8,.2,1)}
+#hud h1{margin:0;font-family:var(--serif);font-weight:500;font-size:30px;letter-spacing:.2em;line-height:1.15;
+  background:linear-gradient(100deg,#fff 10%,var(--accent) 55%,var(--accent2) 100%);-webkit-background-clip:text;background-clip:text;color:transparent;
+  filter:drop-shadow(0 0 18px rgba(140,170,255,.18))}
+#hud .sub{margin-top:7px;font-size:10.5px;letter-spacing:.46em;color:var(--faint);text-transform:uppercase}
+#hud .eq{margin-top:16px;font-family:var(--serif);font-style:italic;font-size:19px;letter-spacing:.02em;color:var(--mute);white-space:nowrap}
+#hud .eq sup,#hud .eq sub{font-size:.62em;font-style:normal;font-family:var(--num);letter-spacing:0}
+#hud .eq sup{color:var(--accent)}
+#hud .meta{margin-top:7px;font-size:11px;letter-spacing:.12em;color:var(--faint);font-variant-numeric:tabular-nums}
+#hint{position:fixed;left:34px;bottom:26px;font-size:11px;letter-spacing:.14em;color:var(--faint);pointer-events:none;z-index:3;transition:opacity 1.2s}
+#hint.gone{opacity:0}
+body.ui-hidden #hud{opacity:0;transform:translateY(-10px)}
+body.ui-hidden #hint{opacity:0}
+
+/* ---------- panel ---------- */
+#panel{position:fixed;top:16px;right:16px;bottom:16px;width:var(--panel-w);z-index:5;display:flex;flex-direction:column;border-radius:22px;
+  background:linear-gradient(180deg,rgba(20,23,42,.58),rgba(9,10,22,.5));
+  -webkit-backdrop-filter:blur(26px) saturate(150%);backdrop-filter:blur(26px) saturate(150%);
+  border:1px solid var(--line);box-shadow:0 30px 90px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.07);
+  transition:transform .7s cubic-bezier(.2,.8,.2,1),opacity .45s}
+body.ui-hidden #panel{transform:translateX(calc(100% + 28px));opacity:0;pointer-events:none}
+#panel header{display:flex;align-items:center;gap:8px;padding:15px 16px 12px 20px;flex:none;position:relative}
+#panel header .ttl{display:flex;gap:2px;flex:1;margin-left:-9px}
+.tab{position:relative;padding:7px 9px;border-radius:9px;font-size:12px;letter-spacing:.22em;color:var(--faint);transition:color .25s;white-space:nowrap}
+.tab:hover{color:#fff}
+.tab.on{color:var(--ink)}
+.tab::after{content:"";position:absolute;left:9px;right:calc(9px + .22em);bottom:2px;height:1px;background:linear-gradient(90deg,var(--accent),var(--accent2));opacity:0;transform:scaleX(.4);transition:all .3s}
+.tab.on::after{opacity:1;transform:none}
+#tab-match{display:none}
+body.tab-match #tab-match{display:block}
+body.tab-match #tab-params{display:none}
+.icon-btn{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;color:var(--mute);transition:background .2s,color .2s,transform .2s}
+.icon-btn:hover{background:rgba(255,255,255,.08);color:#fff}
+.icon-btn:active{transform:scale(.92)}
+.icon-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+#grab{display:none}
+#scroll{flex:1;overflow-y:auto;overflow-x:hidden;padding:0 16px 10px 20px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.14) transparent;overscroll-behavior:contain;
+  -webkit-mask-image:linear-gradient(180deg,transparent 0,#000 14px,#000 calc(100% - 18px),transparent 100%);mask-image:linear-gradient(180deg,transparent 0,#000 14px,#000 calc(100% - 18px),transparent 100%)}
+#scroll::-webkit-scrollbar{width:4px}
+#scroll::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:4px}
+section{padding:6px 0 10px;border-top:1px solid var(--line)}
+section:first-child{border-top:0}
+section>h2{margin:0;padding:10px 0 8px;display:flex;align-items:baseline;gap:9px;font-weight:500;font-size:12.5px;letter-spacing:.24em;color:var(--ink);cursor:pointer}
+section>h2 em{font-style:normal;font-size:9.5px;letter-spacing:.3em;color:var(--faint);text-transform:uppercase;flex:1}
+section>h2 i{width:6px;height:6px;border-right:1px solid var(--faint);border-bottom:1px solid var(--faint);transform:rotate(45deg) translateY(-2px);transition:transform .3s}
+section.closed>h2 i{transform:rotate(-45deg)}
+section .body{overflow:hidden}
+section.closed .body{display:none}
+
+.chips{display:flex;flex-wrap:wrap;gap:6px;padding:2px 0 6px}
+.chip{padding:6px 11px;border-radius:999px;font-size:12px;letter-spacing:.06em;color:var(--mute);border:1px solid var(--line);background:rgba(255,255,255,.025);transition:all .25s;white-space:nowrap}
+.chip:hover{color:#fff;border-color:var(--line2);background:rgba(255,255,255,.06)}
+.chip.on{color:#fff;border-color:transparent;background:rgba(255,255,255,.16);background:linear-gradient(120deg,color-mix(in srgb,var(--accent) 38%,transparent),color-mix(in srgb,var(--accent2) 38%,transparent));box-shadow:0 0 18px color-mix(in srgb,var(--accent2) 30%,transparent),inset 0 0 0 1px rgba(255,255,255,.18)}
+
+.row{padding:5px 0 3px;transition:opacity .3s}
+.row.off{opacity:.32;pointer-events:none}
+.row .head{display:flex;align-items:center;gap:8px;height:20px}
+.row label{font-size:12px;letter-spacing:.05em;color:var(--mute);flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.row label small{font-size:10px;color:var(--faint);letter-spacing:.04em;margin-left:7px;font-family:var(--serif);font-style:italic}
+.row output{font-family:var(--num);font-size:11px;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:0;min-width:42px;text-align:right}
+.dot{width:16px;height:16px;border-radius:50%;display:grid;place-items:center;flex:none;margin-left:-3px}
+.dot::before{content:"";width:6px;height:6px;border-radius:50%;border:1px solid var(--faint);transition:all .25s}
+.dot:hover::before{border-color:#fff}
+.dot.on::before{border-color:transparent;background:var(--accent);box-shadow:0 0 0 3px color-mix(in srgb,var(--accent) 22%,transparent),0 0 10px var(--accent);animation:pulse 2.4s ease-in-out infinite}
+body.paused .dot.on::before{animation:none;opacity:.55}
+@keyframes pulse{50%{box-shadow:0 0 0 5px color-mix(in srgb,var(--accent) 8%,transparent),0 0 14px var(--accent)}}
+.nodot{width:13px;flex:none}
+
+input[type=range]{-webkit-appearance:none;appearance:none;display:block;width:100%;height:20px;margin:0;background:transparent;cursor:pointer;touch-action:pan-y;outline:none}
+input[type=range]::-webkit-slider-runnable-track{height:2px;border-radius:2px;background:linear-gradient(90deg,var(--accent) 0,var(--accent2) var(--p,50%),rgba(255,255,255,.13) var(--p,50%))}
+input[type=range]::-moz-range-track{height:2px;border-radius:2px;background:linear-gradient(90deg,var(--accent) 0,var(--accent2) var(--p,50%),rgba(255,255,255,.13) var(--p,50%))}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:12px;height:12px;margin-top:-5px;border-radius:50%;border:0;background:#fff;
+  box-shadow:0 0 0 4px rgba(255,255,255,.07),0 0 14px color-mix(in srgb,var(--accent2) 80%,transparent);transition:transform .15s,box-shadow .15s}
+input[type=range]::-moz-range-thumb{width:12px;height:12px;border-radius:50%;border:0;background:#fff;box-shadow:0 0 0 4px rgba(255,255,255,.07),0 0 14px color-mix(in srgb,var(--accent2) 80%,transparent)}
+input[type=range]:hover::-webkit-slider-thumb,input[type=range]:active::-webkit-slider-thumb{transform:scale(1.25);box-shadow:0 0 0 6px rgba(255,255,255,.09),0 0 18px var(--accent2)}
+
+.seg{display:flex;gap:2px;padding:3px;border-radius:12px;background:rgba(255,255,255,.045);border:1px solid var(--line);margin:4px 0 8px}
+.seg button{flex:1;padding:6px 0;border-radius:9px;font-size:12px;letter-spacing:.1em;color:var(--mute);transition:all .25s;white-space:nowrap}
+.seg button:hover{color:#fff}
+.seg button.on{color:#fff;background:rgba(255,255,255,.14);background:linear-gradient(120deg,color-mix(in srgb,var(--accent) 30%,transparent),color-mix(in srgb,var(--accent2) 34%,transparent));box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+.cap{font-size:11px;letter-spacing:.14em;color:var(--faint);margin:8px 0 2px}
+.swatches{display:flex;gap:9px;padding:6px 0 8px;flex-wrap:wrap}
+.sw{position:relative;width:34px;height:34px;border-radius:50%;transition:transform .25s;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
+.sw:hover{transform:scale(1.08)}
+.sw.on{box-shadow:0 0 0 2px var(--bg),0 0 0 3px rgba(255,255,255,.85),0 0 18px rgba(255,255,255,.25)}
+.sw span{position:absolute;left:50%;top:calc(100% + 4px);transform:translateX(-50%);font-size:9.5px;letter-spacing:.08em;color:var(--faint);white-space:nowrap;opacity:0;transition:opacity .2s;pointer-events:none}
+.sw.on span{opacity:1;color:var(--mute)}
+.swatches{padding-bottom:20px}
+
+.toggles{display:flex;gap:6px;margin:4px 0 8px}
+.tg{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:7px 0;border-radius:11px;font-size:12px;letter-spacing:.1em;color:var(--faint);border:1px solid var(--line);background:rgba(255,255,255,.02);transition:all .25s}
+.tg::before{content:"";width:5px;height:5px;border-radius:50%;background:currentColor;opacity:.5;transition:all .25s}
+.tg.on{color:#fff;border-color:var(--line2);background:rgba(255,255,255,.07)}
+.tg.on::before{background:var(--accent);opacity:1;box-shadow:0 0 8px var(--accent)}
+.sw-row{display:flex;align-items:center;gap:10px;padding:6px 0;font-size:12px;letter-spacing:.05em;color:var(--mute)}
+.sw-row span{flex:1}
+.sw-row small{color:var(--faint);font-size:10px;margin-left:6px;letter-spacing:.06em}
+.switch{width:34px;height:19px;border-radius:999px;background:rgba(255,255,255,.1);position:relative;transition:background .3s;flex:none;box-shadow:inset 0 0 0 1px var(--line)}
+.switch::after{content:"";position:absolute;left:2.5px;top:2.5px;width:14px;height:14px;border-radius:50%;background:#cfd4ea;transition:transform .3s cubic-bezier(.3,1.4,.5,1),background .3s}
+.switch.on{background:var(--accent);background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 70%,transparent),color-mix(in srgb,var(--accent2) 80%,transparent))}
+.switch.on::after{transform:translateX(15px);background:#fff}
+.sep-btn{flex:none;width:100%;height:34px;margin:2px 0 6px;position:relative}
+.sep-btn .i-close,.sep-btn.open .i-open{display:none}
+.sep-btn.open .i-close{display:block}
+.sep-btn.open{color:#fff;border-color:transparent;background:rgba(255,255,255,.12);background:linear-gradient(120deg,color-mix(in srgb,var(--accent) 30%,transparent),color-mix(in srgb,var(--accent2) 34%,transparent));box-shadow:inset 0 0 0 1px rgba(255,255,255,.16)}
+.sep-btn kbd{position:absolute;right:11px;top:50%;transform:translateY(-50%);font-family:var(--num);font-size:9.5px;letter-spacing:0;color:var(--faint);border:1px solid var(--line);border-radius:5px;padding:1px 5px}
+@media (pointer:coarse){.sep-btn kbd{display:none}}
+/* ---------- 解 ↔ 线 ---------- */
+.m{font-family:var(--serif);font-style:italic;letter-spacing:.01em}
+.m sup,.m sub{font-family:var(--serif);font-style:normal;font-size:.66em;letter-spacing:0}
+.ov{text-decoration:overline;text-decoration-thickness:1px}
+.pc{display:inline-block;width:9px;height:9px;border-radius:3px;flex:none;box-shadow:0 0 0 1px rgba(255,255,255,.22),0 0 9px currentColor}
+.nseg{margin-top:2px}
+.nseg button{letter-spacing:.02em;font-family:var(--num);font-size:11px}
+.fx{margin:2px 0 8px;padding:10px 12px 9px;border-radius:14px;background:rgba(255,255,255,.035);border:1px solid var(--line)}
+.fx .ln{display:flex;align-items:baseline;gap:10px;padding:2px 0;min-height:24px}
+.fx .ln>i{flex:none;width:26px;font-style:normal;font-size:10px;letter-spacing:.14em;color:var(--faint)}
+.fx .ln .m{font-size:15.5px;color:var(--ink);white-space:nowrap}
+.fx .ln .v{margin-left:auto;font-family:var(--num);font-size:10px;color:var(--faint);white-space:nowrap}
+.fx .val{margin:4px 0 1px 36px;font-family:var(--num);font-size:10px;line-height:1.8;color:var(--faint)}
+.fx .val sup{font-size:.74em}
+.fx .ln b{font-weight:400;font-family:var(--num);font-size:11px;color:var(--ink)}
+.fx .ln .pc{align-self:center;margin-right:-2px}
+.fx .sub{font-size:10.5px;line-height:1.75;letter-spacing:.03em;color:var(--faint);margin:3px 0 4px}
+.fx .sub sup,.fx .sub sub{font-size:.72em}
+.fx .cur{margin-top:6px;padding-top:8px;border-top:1px solid var(--line)}
+.leg{max-height:222px;overflow-y:auto;margin:2px -8px 6px;padding:0 4px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.14) transparent;overscroll-behavior:contain;position:relative}
+.leg::-webkit-scrollbar{width:4px}
+.leg::-webkit-scrollbar-thumb{background:rgba(255,255,255,.14);border-radius:4px}
+.it{display:flex;align-items:center;gap:9px;width:100%;height:27px;padding:0 8px;border-radius:9px;text-align:left;transition:background .2s}
+.it b{flex:none;width:74px;font-weight:400;font-family:var(--num);font-size:10.5px;color:var(--mute);letter-spacing:0}
+.it .m{flex:1;font-size:13.5px;color:var(--mute);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.it:hover{background:rgba(255,255,255,.055)}
+.it.on{background:rgba(255,255,255,.1);box-shadow:inset 0 0 0 1px var(--line2)}
+.it.on b,.it.on .m{color:#fff}
+.pts{margin:6px -8px 6px;font-family:var(--num);font-size:10.5px;font-variant-numeric:tabular-nums}
+.tr{display:grid;grid-template-columns:20px 1fr 1.3fr 1.3fr;gap:4px;align-items:center;width:100%;height:23px;padding:0 8px;border-radius:8px;text-align:right;color:var(--mute);letter-spacing:0;font-size:inherit}
+.tr span:first-child{text-align:center;color:var(--faint)}
+.tr.th{height:20px;color:var(--faint);font-family:var(--serif);font-style:italic;font-size:12.5px}
+.tr.th sub{font-family:var(--num);font-style:normal;font-size:.64em}
+button.tr{font-family:var(--num);transition:background .15s}
+button.tr.hv,button.tr:hover{background:rgba(255,255,255,.06);color:#fff}
+button.tr.on{background:rgba(255,255,255,.11);color:#fff;box-shadow:inset 0 0 0 1px var(--line2)}
+button.tr.on span:first-child,button.tr.hv span:first-child{color:var(--accent)}
+.det{margin:4px 0 8px;padding:9px 12px;border-radius:12px;background:rgba(255,255,255,.035);border:1px solid var(--line);font-family:var(--num);font-size:10.5px;color:var(--mute);min-height:42px}
+.det .hd{display:flex;gap:8px;align-items:center;color:#fff;margin-bottom:5px;font-size:11px}
+.det .hd span:last-child{margin-left:auto;color:var(--mute)}
+.det .ln{display:flex;gap:8px;align-items:baseline;padding:2px 0;white-space:nowrap}
+.det .ln>i{flex:none;width:22px;font-style:normal;color:var(--faint);font-size:10px}
+.det .ln>i.m{font-style:italic;font-size:13px;color:var(--mute)}
+.det .ln b{font-weight:400;color:var(--ink)}
+.det .ln em{font-style:normal;color:var(--faint);margin-left:auto;font-size:9.5px}
+.det .ln .m{font-size:12.5px;color:var(--mute)}
+.det .chk{margin-top:4px;padding-top:6px;border-top:1px solid var(--line)}
+.det .chk em{color:var(--accent);font-size:11px}
+.det .nt{font-family:var(--sans);font-size:10.5px;color:var(--faint);margin-top:5px;letter-spacing:.03em;line-height:1.65;white-space:normal}
+.det .nt sub{font-size:.7em}
+#hud .br{display:none;margin-top:11px;align-items:center;gap:9px;color:var(--ink);white-space:nowrap}
+#hud .br b{font-weight:400;font-family:var(--num);font-size:11px;letter-spacing:.02em;color:var(--mute)}
+#hud .br .m{font-size:16.5px}
+body.tab-match #hud .br{display:flex}
+#marks{position:fixed;inset:0;pointer-events:none;z-index:2;overflow:hidden;display:none}
+#marks.show{display:block}
+.mk{position:absolute;left:0;top:0;margin:-22px 0 0 9px;display:none;gap:7px;align-items:flex-start;font-family:var(--num);font-size:10px;line-height:1.45;color:rgba(255,255,255,.82);padding:0 5px;border-radius:6px;background:rgba(8,10,22,.5);white-space:nowrap}
+.mk b{font-weight:400}
+.mk em{display:none;font-style:normal;color:rgba(236,239,250,.86)}
+.mk.show{display:flex}
+.mk.on{margin:-46px 0 0 14px;padding:4px 8px;color:#fff;background:rgba(10,12,26,.84);box-shadow:0 0 0 1px var(--line2),0 8px 22px rgba(0,0,0,.45);z-index:1}
+.mk.on b{color:var(--accent)}
+.mk.on em{display:block}
+.note{font-size:10.5px;line-height:1.7;letter-spacing:.04em;color:var(--faint);margin:2px 0 6px}
+.note b{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin:0 3px;vertical-align:1px}
+
+#panel footer{flex:none;display:flex;gap:8px;padding:10px 16px 16px 20px;border-top:1px solid var(--line)}
+.btn{flex:1;height:36px;border-radius:12px;font-size:12px;letter-spacing:.2em;color:var(--mute);border:1px solid var(--line);background:rgba(255,255,255,.03);display:flex;align-items:center;justify-content:center;gap:7px;transition:all .25s}
+.btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.btn:hover{color:#fff;border-color:var(--line2);background:rgba(255,255,255,.07)}
+.btn:active{transform:scale(.97)}
+.btn.primary{flex:1.5;color:#fff;border-color:transparent;background:rgba(255,255,255,.14);background:linear-gradient(120deg,color-mix(in srgb,var(--accent) 42%,transparent),color-mix(in srgb,var(--accent2) 48%,transparent));box-shadow:inset 0 0 0 1px rgba(255,255,255,.2),0 8px 26px color-mix(in srgb,var(--accent2) 22%,transparent)}
+
+#open{position:fixed;top:22px;right:22px;z-index:4;height:36px;padding:0 15px;border-radius:999px;font-size:12px;letter-spacing:.24em;color:var(--mute);
+  background:rgba(16,18,34,.5);-webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid var(--line);opacity:0;pointer-events:none;transition:opacity .5s,color .2s}
+body.ui-hidden #open{opacity:.75;pointer-events:auto}
+#open:hover{color:#fff;opacity:1}
+#toast{position:fixed;left:50%;bottom:34px;transform:translate(-50%,16px);padding:9px 18px;border-radius:999px;font-size:12px;letter-spacing:.18em;color:#fff;background:rgba(16,18,34,.72);
+  -webkit-backdrop-filter:blur(16px);backdrop-filter:blur(16px);border:1px solid var(--line2);opacity:0;pointer-events:none;transition:all .45s cubic-bezier(.2,.8,.2,1);z-index:9}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#fatal{position:fixed;inset:0;display:none;place-items:center;text-align:center;padding:30px;z-index:20;background:radial-gradient(circle at 50% 40%,#12163a,#04050b 70%);font-size:14px;line-height:2;letter-spacing:.1em;color:var(--mute)}
+#fatal b{display:block;font-family:var(--serif);font-size:26px;letter-spacing:.2em;color:#fff;font-weight:500;margin-bottom:10px}
+
+/* ---------- mobile: bottom sheet ---------- */
+@media (max-width:760px){
+  #hud{left:20px;top:calc(16px + env(safe-area-inset-top))}
+  #hud h1{font-size:21px}
+  #hud .sub{font-size:8.5px;margin-top:5px}
+  #hud .eq{font-size:15px;margin-top:10px}
+  #hud .meta{font-size:10px}
+  #hint{display:none}
+  #panel{top:auto;left:0;right:0;bottom:0;width:auto;height:min(58vh,520px);border-radius:24px 24px 0 0;border-bottom:0;padding-bottom:env(safe-area-inset-bottom)}
+  body.sheet-peek #panel{transform:translateY(calc(100% - 118px - env(safe-area-inset-bottom)))}
+  body.ui-hidden #panel{transform:translateY(calc(100% + 10px))}
+  #panel header{padding:20px 14px 8px 20px}
+  #grab{display:block;position:absolute;left:0;right:0;top:0;height:22px;cursor:grab}
+  #grab::after{content:"";position:absolute;left:50%;top:8px;width:38px;height:4px;margin-left:-19px;border-radius:4px;background:rgba(255,255,255,.22)}
+  #scroll{padding:0 16px 8px 20px}
+  #tab-params section:first-child .chips{flex-wrap:nowrap;overflow-x:auto;margin:0 -16px 0 -20px;padding:2px 16px 8px 20px;scrollbar-width:none}
+  #tab-params section:first-child .chips::-webkit-scrollbar{display:none}
+  #tab-params section:first-child>h2{display:none}
+  #hud .br{margin-top:7px;flex-wrap:wrap;gap:3px 8px;max-width:calc(100vw - 40px)}
+  #hud .br .m{font-size:13.5px}
+  .tab{padding:8px 10px;font-size:12.5px}
+  .leg{max-height:170px}
+  .it{height:32px}
+  .tr{height:28px}
+  .chip{padding:8px 13px;font-size:12.5px}
+  input[type=range]{height:30px}
+  input[type=range]::-webkit-slider-thumb{width:16px;height:16px;margin-top:-7px}
+  input[type=range]::-moz-range-thumb{width:16px;height:16px}
+  .row .head{height:22px}
+  .dot{width:24px;height:24px;margin-left:-7px}
+  .dot::before{width:8px;height:8px}
+  .nodot{width:17px}
+  #panel footer{padding:8px 16px 12px 20px}
+  #open{top:calc(14px + env(safe-area-inset-top));right:14px}
+  #toast{bottom:auto;top:calc(70px + env(safe-area-inset-top))}
+}
+@media (max-height:520px) and (min-width:761px){ #hud .eq,#hud .meta,body.tab-match #hud .br{display:none} }
+</style>
+</head>
+<body class="sheet-peek">
+<canvas id="stage" aria-label="卡拉比–丘流形三维视图"></canvas>
+
+<div id="hud">
+  <h1>卡拉比–丘流形</h1>
+  <div class="sub">Calabi–Yau Manifold</div>
+  <div class="eq" id="eq"></div>
+  <div class="meta" id="meta"></div>
+  <div class="br" id="branch"></div>
+</div>
+<div id="marks" aria-hidden="true"></div>
+<div id="hint">拖动旋转 · 滚轮 / 双指缩放 · 点亮参数旁的圆点让它随时间演变 · M 解 ↔ 线对照 · G 分离 / 拼合 · H 隐藏界面 · 空格 暂停</div>
+
+<aside id="panel" aria-label="参数面板">
+  <header>
+    <div id="grab"></div>
+    <div class="ttl" id="tabs"><button class="tab on" data-tab="params">参数</button><button class="tab" data-tab="match" title="把每一组解和图上的每一片、每个点逐一对上 (M)">解 ↔ 线</button></div>
+    <button class="icon-btn" id="btn-full" title="全屏"><svg viewBox="0 0 16 16"><path d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10"/></svg></button>
+    <button class="icon-btn" id="btn-hide" title="隐藏界面 (H)"><svg viewBox="0 0 16 16"><path d="M1.5 8s2.4-4.2 6.5-4.2S14.5 8 14.5 8s-2.4 4.2-6.5 4.2S1.5 8 1.5 8z"/><circle cx="8" cy="8" r="1.9"/></svg></button>
+  </header>
+  <div id="scroll"></div>
+  <footer>
+    <button class="btn primary" id="btn-shot"><svg viewBox="0 0 16 16"><path d="M2 5.2h2.4l1-1.6h5.2l1 1.6H14v7.3H2z"/><circle cx="8" cy="8.7" r="2.3"/></svg>截图</button>
+    <button class="btn" id="btn-rand">随机</button>
+    <button class="btn" id="btn-reset">重置</button>
+  </footer>
+</aside>
+<button id="open">参数</button>
+<div id="toast"></div>
+<div id="fatal"><div><b>无法启动 WebGL</b>此页面需要支持 WebGL 2 的浏览器（较新的 Chrome / Edge / Safari / Firefox），<br>并请确认已开启硬件加速。</div></div>
+
+<script>
+/*__VENDOR__*/
+</script>
+<script>
+(function () {
+'use strict';
+const V = window.CYV;
+const $ = (s, r) => (r || document).querySelector(s);
+const clamp = (x, a, b) => Math.min(b, Math.max(a, x));
+const lerp = (a, b, t) => a + (b - a) * t;
+const sstep = (a, b, x) => { const t = clamp((x - a) / (b - a), 0, 1); return t * t * (3 - 2 * t); };
+const invSmooth = y => 0.5 - Math.sin(Math.asin(1 - 2 * clamp(y, 0, 1)) / 3);
+const mqMobile = matchMedia('(max-width: 760px)');
+const coarse = matchMedia('(pointer: coarse)').matches;
+const QS = new URLSearchParams(location.search);
+
+/* =====================================================================
+   参数定义
+   ===================================================================== */
+const DEF = {
+  n:       { label: '幂次 n',        sub: '',              min: 2, max: 9, step: 0.01, d: 2, auto: 'stair', lo: 2, hi: 8, rate: 0.2,
+             tip: '费马型曲面 z₁ⁿ + z₂ⁿ = 1 的幂次，由 n × n 个面片拼成；n = 5 即五次三维流形的经典截面。非整数时最后一圈面片渐显，形成平滑过渡。' },
+  n2:      { label: '幂次 n₂',       sub: 'z₂ 的幂次',     min: 2, max: 9, step: 0.01, d: 2, auto: 'stair', lo: 2, hi: 8, rate: 0.13,
+             tip: '关闭“两个幂次同步”后可单独设置 z₂ 的幂次，得到 z₁ⁿ + z₂ⁿ² = 1（n × n₂ 个面片）。' },
+  psi:     { label: '形变 ψ',        sub: 'Dwork 族',      min: 0, max: 0.92, step: 0.005, d: 2, auto: 'sine', lo: 0, hi: 0.72, rate: 0.42,
+             tip: '复结构形变 z₁ⁿ + z₂ⁿ − nψ·z₁z₂ = 1（Dwork 族的截面）。数值以出现节点奇点的临界模长 ψ* 为单位，趋近 1 时曲面逼近奇点。' },
+  psiArg:  { label: '形变相位',      sub: 'arg ψ',         min: 0, max: 360, step: 0.5, d: 0, unit: '°', auto: 'loop', rate: 14,
+             tip: '复参数 ψ 的辐角；让它绕一圈可以看到绕奇点的单值化。' },
+  neck:    { label: '截面收缩',      sub: '|c|^(1/n)',     min: 0.12, max: 1.3, step: 0.005, d: 2, auto: 'sine', lo: 0.16, hi: 1.08, rate: 0.36,
+             tip: '把其余坐标固定在别处得到的截面 z₁ⁿ + z₂ⁿ = c。外边界保持不动，c → 0 时“颈部”收缩成锥形奇点。' },
+  gap:     { label: '间隙',          sub: '0 = 完全拼合',  min: 0, max: 1.5, step: 0.005, d: 2, auto: 'sine', lo: 0, hi: 0.62, rate: 0.55, dwell: 0.14,
+             tip: '各面片沿自身质心方向外推的距离（以 |z| 为单位）。0 为完全拼合；点亮圆点后呼吸式开合。' },
+  shrink:  { label: '面片微缩',      sub: '显出缝隙',      min: 0, max: 0.35, step: 0.005, d: 2,
+             tip: '分离后每个面片（或每组）绕自身中心略微缩小，让缝隙轮廓更清楚；间隙为 0 时不起作用。' },
+  selK1:   { label: '选中 k₁',       sub: 'z₁ 的相位扇区', min: 0, max: 8, step: 1, d: 0, int: true, sel: true,
+             tip: '面片 (k₁, k₂) 的第一个指标：z₁ 乘以单位根 e^(2πi·k₁/n)。也可以直接双击曲面上的面片来选中。' },
+  selK2:   { label: '选中 k₂',       sub: 'z₂ 的相位扇区', min: 0, max: 8, step: 1, d: 0, int: true, sel: true,
+             tip: '面片 (k₁, k₂) 的第二个指标：z₂ 乘以单位根 e^(2πi·k₂/n₂)。' },
+  ext:     { label: '延展范围',      sub: '|Im ξ|',        min: 0.3, max: 1.8, step: 0.01, d: 2,
+             tip: '参数域在虚方向的范围，决定曲面向无穷远延伸多远。' },
+  alpha:   { label: '投影角 α',      sub: 'Im z₁ ↔ Im z₂', min: 0, max: 360, step: 0.5, d: 0, unit: '°', auto: 'loop', rate: 9,
+             tip: '经典投影 (Re z₁, Re z₂, cos α·Im z₁ + sin α·Im z₂)：在两个虚部张成的平面内旋转。' },
+  th1:     { label: 'z₁ 相位',       sub: 'Re z₁ ↔ Im z₁', min: 0, max: 360, step: 0.5, d: 0, unit: '°', auto: 'loop', rate: 6.1 },
+  th2:     { label: 'z₂ 相位',       sub: 'Re z₂ ↔ Im z₂', min: 0, max: 360, step: 0.5, d: 0, unit: '°', auto: 'loop', rate: -4.3 },
+  xw:      { label: '交叉旋转 Ⅰ',    sub: 'Re z₁ ↔ Im z₂', min: 0, max: 360, step: 0.5, d: 0, unit: '°', auto: 'loop', rate: 3.7 },
+  yz:      { label: '交叉旋转 Ⅱ',    sub: 'Re z₂ ↔ Im z₁', min: 0, max: 360, step: 0.5, d: 0, unit: '°', auto: 'loop', rate: -2.9 },
+  xy:      { label: '实平面旋转',    sub: 'Re z₁ ↔ Re z₂', min: 0, max: 360, step: 0.5, d: 0, unit: '°', auto: 'loop', rate: 2.3 },
+  persp:   { label: '四维透视',      sub: 'w 纵深',        min: 0, max: 0.35, step: 0.005, d: 2,
+             tip: '0 为正交投影（直接丢弃第四维）；增大后按第四维坐标做透视缩放。' },
+  speed:   { label: '演变速度',      min: 0, max: 3, step: 0.01, d: 2, unit: '×' },
+  breath:  { label: '呼吸幅度',      min: 0, max: 0.3, step: 0.002, d: 2 },
+  opacity: { label: '不透明度',      min: 0.05, max: 1, step: 0.01, d: 2 },
+  wireDensity:   { label: '线框密度',  min: 2, max: 20, step: 1, d: 0 },
+  particleCount: { label: '粒子数量',  min: 2, max: 80, step: 1, d: 0, unit: 'k' },
+  bloom:   { label: '辉光强度',      min: 0, max: 1.8, step: 0.01, d: 2 },
+  subdiv:  { label: '网格细分',      min: 8, max: 96, step: 4, d: 0 },
+  sampN:   { label: '采样点数',      min: 2, max: 13, step: 1, d: 0, int: true, view: true, def: 5,
+             tip: '在选中面片的采样线上等距取几个点（r 从 0 到 1），逐个列出解的数值。' },
+  sampY:   { label: '采样线位置',    sub: 'Im ξ / Y',      min: -1, max: 1, step: 0.01, d: 2, view: true, def: 0,
+             tip: '采样线在面片上的位置。0 是面片中线，此时 r 取实数 0 → 1；偏离中线后 r 成为复数，采样线扫过整片曲面。' }
+};
+const NUM_KEYS = Object.keys(DEF);
+const AUTO_KEYS = NUM_KEYS.filter(k => DEF[k].auto);
+const ANGLE_KEYS = NUM_KEYS.filter(k => DEF[k].auto === 'loop');
+const NO_TWEEN = ['subdiv', 'wireDensity', 'selK1', 'selK2'];
+
+const PALETTES = {
+  aurora: { name: '极光', stops: ['#2b3bd6', '#16bfd6', '#5df2b4', '#b58cff', '#ff6fc4'] },
+  dusk:   { name: '霞光', stops: ['#3a1fa8', '#b23bd0', '#ff4f86', '#ff9a4d', '#ffd98a'] },
+  abyss:  { name: '深海', stops: ['#0b2a8f', '#0f6fd0', '#19c4d6', '#9af3ff', '#3f7dff'] },
+  glaze:  { name: '琉璃', stops: ['#4fc3ff', '#8f7bff', '#f06fd0', '#ffb36b', '#5fe6b0'] },
+  moon:   { name: '月白', stops: ['#4c5fa8', '#8fa2dc', '#e6ecff', '#b4bff0', '#6f7fc4'] },
+  gilt:   { name: '鎏金', stops: ['#7a2d0c', '#d9762a', '#ffc45c', '#fff0c2', '#c9562a'] }
+};
+const SEP_GROUPS = [['patch', '逐片'], ['row', 'k₁ 行'], ['col', 'k₂ 列']];
+const SEP_DIRS = [['4d', '四维质心'], ['3d', '三维径向']];
+const SEP_SCOPES = [['all', '全部'], ['one', '仅选中']];
+const COLOR_MODES = [['phase', '相位'], ['patch', '面片'], ['curv', '曲率'], ['depth', '第四维']];
+const MATERIALS = [['glass', '琉璃'], ['solid', '瓷质'], ['veil', '光幕']];
+
+const BASE = {
+  n: 5, n2: 5, link: true, psi: 0, psiArg: 0, neck: 1, ext: 1,
+  gap: 0, shrink: 0.05, sepGroup: 'patch', sepDir: '4d', sepScope: 'all', selK1: 0, selK2: 0,
+  alpha: 45, th1: 0, th2: 0, xw: 0, yz: 0, xy: 0, persp: 0,
+  auto: true, speed: 1, breath: 0.03, spin: true,
+  colorMode: 'phase', palette: 'aurora', material: 'glass', opacity: 0.55,
+  surface: true, wire: true, particles: true, wireDensity: 8, particleCount: 14, bloom: 0.5,
+  autos: { alpha: true }
+};
+const PRESETS = [
+  { id: 'quintic',  name: '五次 · 经典',  p: {} },
+  { id: 'threads',  name: '光之丝线',     p: { surface: false, particles: false, wireDensity: 14, palette: 'glaze', bloom: 0.8, alpha: 30, autos: { alpha: true, th1: true } } },
+  { id: 'porcelain',name: '月白瓷',       p: { material: 'solid', palette: 'moon', colorMode: 'curv', wire: false, particles: false, bloom: 0.4, n: 4, n2: 4, alpha: 60 } },
+  { id: 'stardust', name: '星尘',         p: { surface: false, wire: false, particleCount: 60, palette: 'dusk', bloom: 0.7, n: 6, n2: 6, breath: 0.06, autos: { alpha: true, th2: true } } },
+  { id: 'voyage',   name: '幂次巡游',     p: { n: 3, n2: 3, colorMode: 'patch', palette: 'glaze', opacity: 0.6, autos: { n: true, alpha: true } } },
+  { id: 'tesseract',name: '四维翻转',     p: { persp: 0.24, material: 'veil', opacity: 0.5, palette: 'abyss', colorMode: 'depth', wireDensity: 10, autos: { alpha: true, xw: true, yz: true, th1: true } } },
+  { id: 'conifold', name: '锥形奇点',     p: { n: 4, n2: 4, neck: 0.6, ext: 0.9, palette: 'dusk', colorMode: 'curv', opacity: 0.6, autos: { neck: true, alpha: true } } },
+  { id: 'dwork',    name: 'Dwork 形变',   p: { psi: 0.4, palette: 'aurora', colorMode: 'curv', material: 'solid', wire: true, particles: false, bloom: 0.55, autos: { psi: true, psiArg: true, alpha: true } } },
+  { id: 'torus',    name: '三次环面',     p: { n: 3, n2: 3, ext: 1.25, palette: 'gilt', material: 'veil', opacity: 0.6, colorMode: 'phase', autos: { alpha: true, xy: true } } },
+  { id: 'asym',     name: '非对称 3 × 7', p: { link: false, n: 3, n2: 7, palette: 'aurora', colorMode: 'patch', opacity: 0.5, autos: { alpha: true, th2: true } } },
+  { id: 'bloom',    name: '面片绽放',     p: { gap: 0.5, shrink: 0.06, sepDir: '3d', colorMode: 'patch', palette: 'glaze', opacity: 0.62, particles: false, wireDensity: 6, bloom: 0.55, autos: { gap: true, alpha: true } } },
+  { id: 'slices',   name: '分组拆解',     p: { n: 4, n2: 4, gap: 0.62, shrink: 0.08, sepGroup: 'row', material: 'solid', palette: 'aurora', colorMode: 'patch', wire: true, wireDensity: 6, particles: false, bloom: 0.45, alpha: 60, autos: { alpha: true } } }
+];
+
+const P = JSON.parse(JSON.stringify(BASE));
+// 「解 ↔ 线」对照：属于查看方式，不随预设改变
+P.match = false; P.solo = false; P.sampN = 5; P.sampY = 0; P.sampSel = 2; P.sampMode = 'even';
+P.subdiv = (coarse || mqMobile.matches) ? 32 : 48;
+if (coarse) P.particleCount = 10;
+let activePreset = 'quintic';
+
+/* =====================================================================
+   着色器
+   ===================================================================== */
+const GLSL_MAP = `
+#define PI 3.141592653589793
+#define HPI 1.5707963267948966
+uniform float uN1, uN2, uC1, uC2, uW1, uW2;
+uniform float uMu, uPsiArg, uNeck, uYext, uQ, uPersp, uBreath, uTime, uScale, uWarp;
+uniform mat4 uRot;
+// 面片分离：每个面片 (k1,k2) 作为刚体沿其质心方向外推，可选绕自身中心微缩
+uniform float uGap, uShrink, uSep3D, uSepFocus, uHiFocus, uSolo;
+uniform vec3 uSepMode;          // 分组权重：逐片 / 按 k1 / 按 k2
+uniform vec2 uPiv;              // 面片中心的 |z1|, |z2|
+uniform vec2 uSepW[81];         // 每个面片的权重，平滑过渡：x = 参与分离，y = 「解 ↔ 线」对照选中
+vec4 gSepT = vec4(0.0), gSepPiv = vec4(0.0);
+float gSepS = 1.0, gSel = 1.0, gHi = 0.0, gBright = 1.0;
+void cySepInit(float k1, float k2){
+  vec2 pw = uSepW[int(k2)*9 + int(k1)];
+  gSel = pw.x; gHi = pw.y * uHiFocus;
+  gBright = min(mix(1.0, pw.x, uSepFocus), mix(1.0, pw.y, uHiFocus));
+  float t1 = 2.0*PI*k1/uN1, t2 = 2.0*PI*k2/uN2;
+  // 四维坐标顺序 (Re z1, Re z2, Im z1, Im z2)
+  vec4 E1 = vec4(cos(t1), 0.0, sin(t1), 0.0), E2 = vec4(0.0, cos(t2), 0.0, sin(t2));
+  float a = uSepMode.x * 0.70710678;
+  vec4 R = uRot * ((a + uSepMode.y)*E1 + (a + uSepMode.z)*E2);
+  vec3 d3 = R.xyz / sqrt(dot(R.xyz, R.xyz) + 0.02);
+  gSepT = mix(R, vec4(d3, 0.0), uSep3D) * (uGap * gSel);
+  gSepS = 1.0 - uShrink * gSel;
+  gSepPiv = uNeck * ((uSepMode.x + uSepMode.y)*uPiv.x*E1 + (uSepMode.x + uSepMode.z)*uPiv.y*E2);
+}
+
+vec2 cmul(vec2 a, vec2 b){ return vec2(a.x*b.x - a.y*b.y, a.x*b.y + a.y*b.x); }
+vec2 cpw(vec2 z, float p){
+  float r2 = dot(z, z);
+  if (r2 < 1e-18) return vec2(0.0);
+  // 正实轴上显式取 0：部分实现对 atan(-0.0, x>0) 会返回 π
+  float a = (z.y == 0.0 && z.x > 0.0) ? 0.0 : atan(z.y, z.x) * p;
+  return pow(r2, 0.5*p) * vec2(cos(a), sin(a));
+}
+float spow(float x, float p){ return x < 1e-7 ? 0.0 : pow(x, p); }   // pow(0,p) 在部分驱动上不精确
+// 参数域重映射：在面片顶点（分支点）附近加密采样
+vec2 cyDomain(vec2 st){
+  float pa = mix(1.0, clamp(0.5*uN2, 1.0, 2.2), uWarp), pb = mix(1.0, clamp(0.5*uN1, 1.0, 2.2), uWarp);
+  float s = st.x;
+  float gx = s < 0.5 ? 0.5*spow(2.0*s, pa) : 1.0 - 0.5*spow(2.0 - 2.0*s, pb);
+  float tau = 2.0*st.y - 1.0;
+  float gy = sign(tau) * spow(abs(tau), mix(1.0, uQ, uWarp));
+  return vec2(gx*HPI, gy*uYext);
+}
+// Hanson 参数化：u1 = cos(ξ)^(2/n1), u2 = sin(ξ)^(2/n2)，再乘以单位根
+// 并（可选）用最小范数牛顿迭代投影到 Dwork 形变曲面  u1^n1 + u2^n2 − μ·u1·u2 = 1
+void cyUnit(vec2 xi, float k1, float k2, out vec2 u1, out vec2 u2, out vec2 mu){
+  float cx = cos(xi.x), sx = sin(xi.x), ch = cosh(xi.y), sh = sinh(xi.y);
+  u1 = cpw(vec2(cx*ch, -sx*sh), 2.0/uN1);
+  u2 = cpw(vec2(sx*ch,  cx*sh), 2.0/uN2);
+  mu = vec2(0.0);
+  if (uMu > 1e-5) {
+    float am = uPsiArg + 2.0*PI*(k1/uN1 + k2/uN2);
+    mu = uMu * vec2(cos(am), sin(am));
+    // 同伦延拓：μ 从 0 逐步增大到目标值，每步做一次牛顿校正
+    for (int i = 0; i < 9; i++) {
+      vec2 m = mu * min(1.0, float(i + 1) / 7.0);
+      vec2 a1 = cpw(u1, uN1 - 1.0), a2 = cpw(u2, uN2 - 1.0);
+      vec2 g  = cmul(a1, u1) + cmul(a2, u2) - vec2(1.0, 0.0) - cmul(m, cmul(u1, u2));
+      vec2 g1 = uN1*a1 - cmul(m, u2);
+      vec2 g2 = uN2*a2 - cmul(m, u1);
+      float d = dot(g1, g1) + dot(g2, g2) + 1e-7;
+      u1 -= cmul(g, vec2(g1.x, -g1.y)) / d;
+      u2 -= cmul(g, vec2(g2.x, -g2.y)) / d;
+    }
+  }
+}
+vec4 cyZ(vec2 u1, vec2 u2, float k1, float k2){
+  float t1 = 2.0*PI*k1/uN1, t2 = 2.0*PI*k2/uN2;
+  vec2 z1 = cmul(u1, vec2(cos(t1), sin(t1)));
+  vec2 z2 = cmul(u2, vec2(cos(t2), sin(t2)));
+  return vec4(z1, z2);
+}
+// ℂ² ≅ ℝ⁴ → 四维旋转 → ℝ³
+vec4 cyRot(vec4 z){
+  vec4 p = vec4(z.x, z.z, z.y, z.w) * uNeck;   // (Re z1, Re z2, Im z1, Im z2)
+  float r = length(p);
+  p *= 1.0 + uBreath * sin(uTime*1.15 - 2.4*r);
+  return uRot * mix(gSepPiv, p, gSepS) + gSepT;
+}
+vec3 cyProj(vec4 q){
+  float wc = 2.2 * tanh(q.w / 2.2);
+  return q.xyz * (uScale / (1.0 - uPersp*wc));
+}
+vec3 cyPos(vec2 xi, float k1, float k2){
+  vec2 u1, u2, mu; cyUnit(xi, k1, k2, u1, u2, mu);
+  return cyProj(cyRot(cyZ(u1, u2, k1, k2)));
+}
+float cyPatchWeight(float k1, float k2){
+  float w = (k1 > uC1 - 1.5 ? uW1 : 1.0) * (k2 > uC2 - 1.5 ? uW2 : 1.0);
+  return w * mix(1.0, uSepW[int(k2)*9 + int(k1)].y, uSolo);      // 「仅显示选中」
+}
+// ℂ² 中复曲线的内蕴高斯曲率 |K| = 2|H|² / |∇g|⁶ （复曲线是极小曲面，K ≤ 0）
+float cyCurv(vec2 u1, vec2 u2, vec2 mu){
+  vec2 b1 = cpw(u1, uN1 - 2.0), b2 = cpw(u2, uN2 - 2.0);
+  vec2 g1 = uN1*cmul(b1, u1) - cmul(mu, u2);
+  vec2 g2 = uN2*cmul(b2, u2) - cmul(mu, u1);
+  vec2 g11 = uN1*(uN1 - 1.0)*b1, g22 = uN2*(uN2 - 1.0)*b2;
+  vec2 H = cmul(g11, cmul(g2, g2)) + 2.0*cmul(mu, cmul(g1, g2)) + cmul(g22, cmul(g1, g1));
+  float G = dot(g1, g1) + dot(g2, g2);
+  return 2.0*dot(H, H) / (G*G*G + 1e-6);
+}
+`;
+
+const GLSL_VARY = `
+varying vec4 vZ;
+varying vec3 vKWF;          // curvature, w, patch fade
+varying vec3 vView;
+flat varying vec4 vPatch;   // k1, k2, 分离权重, 亮度权重（未选中的面片压暗）
+flat varying float vHi;     // 对照模式下选中面片 = 1
+`;
+
+const GLSL_COLOR = `
+uniform sampler2D uPal;
+uniform int uColorMode;
+uniform float uNbar, uCamDist;
+vec3 pal(float t){ return texture2D(uPal, vec2(t, 0.5)).rgb; }
+vec3 cyColor(float shift){
+  float t;
+  if (uColorMode == 0) {
+    float a1 = (vZ.y == 0.0 && vZ.x > 0.0) ? 0.0 : atan(vZ.y, vZ.x);
+    float a2 = (vZ.w == 0.0 && vZ.z > 0.0) ? 0.0 : atan(vZ.w, vZ.z);
+    t = (a1 + a2) / (2.0*PI);
+  } else if (uColorMode == 1) {
+    t = (vPatch.x + vPatch.y/uC2 + 0.25) / uC1 + 0.02*sin(vPatch.y*2.4);
+  } else if (uColorMode == 2) {
+    t = 0.03 + 0.8*(1.0 - exp(-0.85*sqrt(vKWF.x)/max(uNbar - 1.0, 1.0)));
+  } else {
+    t = 0.4 + 0.39*tanh(vKWF.y*1.25);
+  }
+  return pal(t + shift);
+}
+float cyDepthCue(){
+  float d = (-vView.z - uCamDist) / 2.4;
+  // 只分离选中组 / 对照选中某一片时，其余面片压暗
+  return (1.0 - 0.42*smoothstep(-0.6, 1.0, d)) * (0.3 + 0.7*vPatch.w);
+}
+`;
+
+const VS_SURFACE = GLSL_MAP + GLSL_VARY + `
+varying vec3 vNormal;
+varying vec2 vSt;
+void main(){
+  float k1 = float(gl_InstanceID % int(uC1)), k2 = float(gl_InstanceID / int(uC1));
+  float wgt = cyPatchWeight(k1, k2);
+  cySepInit(k1, k2);
+  vec2 xi = cyDomain(position.xy);
+  vec2 u1, u2, mu; cyUnit(xi, k1, k2, u1, u2, mu);
+  vec4 z = cyZ(u1, u2, k1, k2);
+  vec4 q = cyRot(z);
+  vec3 p0 = cyProj(q);
+  float hx = xi.x < 0.5*HPI ? 0.004 : -0.004;
+  float hy = xi.y < 0.0 ? 0.004 : -0.004;
+  vec3 px = cyPos(xi + vec2(hx, 0.0), k1, k2);
+  vec3 py = cyPos(xi + vec2(0.0, hy), k1, k2);
+  vec3 nrm = cross((px - p0)*sign(hx), (py - p0)*sign(hy));
+  float nl = length(nrm);
+  nrm = nl > 1e-12 ? nrm/nl : vec3(0.0, 0.0, 1.0);
+  vec4 mv = modelViewMatrix * vec4(p0, 1.0);
+  vView = mv.xyz;
+  vNormal = mat3(modelViewMatrix) * nrm;
+  vZ = z;
+  vKWF = vec3(cyCurv(u1, u2, mu), q.w, wgt);
+  vPatch = vec4(k1, k2, gSel, gBright); vHi = gHi;
+  vSt = position.xy;
+  gl_Position = wgt < 0.003 ? vec4(2.0, 2.0, 2.0, 1.0) : projectionMatrix * mv;
+}`;
+
+const FS_SURFACE = `
+#define PI 3.141592653589793
+uniform float uC1, uC2;
+` + GLSL_VARY + GLSL_COLOR + `
+uniform int uMat;
+uniform float uOpacity, uDens, uSepEdge;
+varying vec3 vNormal;
+varying vec2 vSt;
+float ign(vec2 p){ return fract(52.9829189*fract(dot(p, vec2(0.06711056, 0.00583715)))); }
+void main(){
+  vec3 Vd = normalize(-vView);
+  vec3 N = normalize(vNormal);
+  if (dot(N, Vd) < 0.0) N = -N;
+  float ndv = clamp(dot(N, Vd), 0.0, 1.0);
+  float fres = pow(1.0 - ndv, 3.0);
+  vec3 base = cyColor(0.10*fres);
+  vec3 tint = cyColor(0.22);
+  vec3 L1 = normalize(vec3(0.42, 0.78, 0.46));
+  vec3 L2 = normalize(vec3(-0.72, -0.3, 0.3));
+  float d1 = 0.5 + 0.5*dot(N, L1); d1 *= d1;
+  float d2 = 0.5 + 0.5*dot(N, L2); d2 *= d2;
+  float sp = pow(max(dot(N, normalize(L1 + Vd)), 0.0), 70.0);
+  float sp2 = pow(max(dot(N, normalize(L2 + Vd)), 0.0), 24.0);
+  float cue = cyDepthCue();
+  float fade = vKWF.z;
+  // 分离时沿面片边界描一道细亮边，显出缝隙轮廓
+  float de = min(min(vSt.x, 1.0 - vSt.x), min(vSt.y, 1.0 - vSt.y));
+  float rim = (uSepEdge * vPatch.z + 1.15*vHi) * (1.0 - smoothstep(0.0, 2.0*fwidth(de) + 1e-5, de));
+  vec3 rimCol = mix(base, vec3(1.0), 0.5) * rim;
+  if (uMat == 1) {
+    // 瓷质：不透明、柔光
+    if (fade < 0.999 && ign(gl_FragCoord.xy) > fade) discard;
+    vec3 col = base*(0.03 + 0.6*d1) + tint*0.10*d2;
+    col += vec3(1.0, 0.97, 0.94)*(0.3*sp + 0.03*sp2);
+    col += mix(base, vec3(1.0), 0.3)*fres*0.42 + 0.5*rimCol;
+    gl_FragColor = vec4(col*cue, 1.0);
+  } else if (uMat == 0) {
+    // 琉璃：半透明（预乘 alpha，弱遮挡以减轻排序依赖）
+    vec3 col = base*(0.05 + 0.58*d1) + tint*0.12*d2;
+    col += vec3(1.0)*(0.55*sp + 0.03*sp2);
+    col += mix(base, vec3(1.0), 0.18)*fres*0.95;
+    float occ = clamp(uOpacity*uDens*(1.0 + 0.7*vHi)*(0.42 + 0.9*fres) + 0.3*sp, 0.0, 1.0) * fade * (0.5 + 0.5*vPatch.w);
+    gl_FragColor = vec4(col*cue*(occ*1.1 + 0.02*fade) + 0.45*rimCol*cue*fade, occ);
+  } else {
+    // 光幕：纯叠加发光
+    vec3 col = base*(0.03 + 0.11*d1) + mix(base, vec3(1.0), 0.1)*fres*0.55 + vec3(1.0)*0.2*sp;
+    gl_FragColor = vec4((col*uOpacity*uDens + 0.3*rimCol)*cue*fade, 1.0);
+  }
+}`;
+
+const VS_LINE = GLSL_MAP + GLSL_VARY + `
+varying float vEdge;
+void main(){
+  float k1 = float(gl_InstanceID % int(uC1)), k2 = float(gl_InstanceID / int(uC1));
+  float wgt = cyPatchWeight(k1, k2);
+  cySepInit(k1, k2);
+  vec2 xi = cyDomain(position.xy);
+  vec2 u1, u2, mu; cyUnit(xi, k1, k2, u1, u2, mu);
+  vec4 z = cyZ(u1, u2, k1, k2);
+  vec4 q = cyRot(z);
+  vec4 mv = modelViewMatrix * vec4(cyProj(q), 1.0);
+  vView = mv.xyz; vZ = z;
+  vKWF = vec3(cyCurv(u1, u2, mu), q.w, wgt);
+  vPatch = vec4(k1, k2, gSel, gBright); vHi = gHi;
+  vEdge = position.z;
+  gl_Position = wgt < 0.003 ? vec4(2.0, 2.0, 2.0, 1.0) : projectionMatrix * mv;
+  gl_Position.z -= 0.0006 * gl_Position.w;
+}`;
+const FS_LINE = `
+#define PI 3.141592653589793
+uniform float uC1, uC2;
+` + GLSL_VARY + GLSL_COLOR + `
+uniform float uWire;
+varying float vEdge;
+void main(){
+  vec3 c = mix(cyColor(0.06), vec3(1.0), 0.12);
+  float cue = cyDepthCue();
+  float a = uWire * mix(0.2, 0.5, vEdge) * cue * cue * vKWF.z * (1.0 + 1.4*vHi);
+  gl_FragColor = vec4(c*a, 1.0);
+}`;
+
+const VS_POINT = GLSL_MAP + GLSL_VARY + `
+attribute vec3 aRnd;
+uniform float uPx;
+uniform float uCamDist2;
+varying float vA;
+void main(){
+  float k1 = floor(aRnd.x*uC1), k2 = floor(aRnd.y*uC2);
+  float wgt = cyPatchWeight(k1, k2);
+  cySepInit(k1, k2);
+  float tt = fract(position.y + uTime*0.011*(0.35 + aRnd.z));
+  vec2 xi = cyDomain(vec2(position.x, tt));
+  vec2 u1, u2, mu; cyUnit(xi, k1, k2, u1, u2, mu);
+  vec4 z = cyZ(u1, u2, k1, k2);
+  vec4 q = cyRot(z);
+  vec4 mv = modelViewMatrix * vec4(cyProj(q), 1.0);
+  vView = mv.xyz; vZ = z;
+  vKWF = vec3(cyCurv(u1, u2, mu), q.w, wgt);
+  vPatch = vec4(k1, k2, gSel, gBright); vHi = gHi;
+  float tw = 0.55 + 0.45*sin(uTime*(0.8 + 2.2*aRnd.z) + aRnd.x*61.0);
+  float big = pow(position.z, 12.0);
+  vA = wgt * tw * smoothstep(0.0, 0.07, tt) * smoothstep(1.0, 0.93, tt) * (0.5 + 0.5*big);
+  gl_PointSize = uPx * (0.55 + 1.9*big) * (0.75 + 0.25*tw) * (uCamDist2 / max(-mv.z, 0.2));
+  gl_Position = projectionMatrix * mv;
+}`;
+const FS_POINT = `
+#define PI 3.141592653589793
+uniform float uC1, uC2;
+` + GLSL_VARY + GLSL_COLOR + `
+uniform float uPtGain;
+varying float vA;
+void main(){
+  vec2 d = gl_PointCoord - 0.5;
+  float r2 = dot(d, d)*4.0;
+  if (r2 > 1.0) discard;
+  float g = exp(-r2*5.0) - 0.0067;
+  vec3 c = mix(cyColor(0.12), vec3(1.0), 0.1 + 0.5*g*g);
+  gl_FragColor = vec4(c * g * vA * uPtGain * cyDepthCue(), 1.0);
+}`;
+
+const VS_STAR = `
+attribute vec3 aRnd;
+uniform float uPx, uTime;
+varying float vA;
+void main(){
+  vec4 mv = modelViewMatrix * vec4(position, 1.0);
+  float tw = 0.6 + 0.4*sin(uTime*(0.3 + 1.4*aRnd.y) + aRnd.x*90.0);
+  vA = tw * (0.25 + 0.75*pow(aRnd.z, 5.0));
+  gl_PointSize = uPx * (0.8 + 1.8*pow(aRnd.z, 8.0));
+  gl_Position = projectionMatrix * mv;
+}`;
+const FS_STAR = `
+uniform vec3 uTint;
+varying float vA;
+void main(){
+  vec2 d = gl_PointCoord - 0.5;
+  float r2 = dot(d, d)*4.0;
+  if (r2 > 1.0) discard;
+  float g = exp(-r2*4.5);
+  gl_FragColor = vec4(mix(vec3(0.75, 0.82, 1.0), uTint, 0.35) * g * vA * 0.5, 1.0);
+}`;
+
+const VS_BG = `
+varying vec2 vUv;
+void main(){ vUv = position.xy*0.5 + 0.5; gl_Position = vec4(position.xy, 1.0, 1.0); }`;
+const FS_BG = `
+uniform vec3 uA, uB;
+uniform float uAspect, uTime;
+uniform vec2 uCenter;
+varying vec2 vUv;
+void main(){
+  vec2 p = (vUv - 0.5) * vec2(uAspect, 1.0);
+  vec2 c = p - uCenter;
+  float r = length(c);
+  vec3 col = mix(vec3(0.0045, 0.0055, 0.016), vec3(0.0006, 0.0008, 0.003), smoothstep(0.0, 1.0, r));
+  float t = uTime*0.03;
+  vec2 pa = vec2(0.34*cos(t), 0.2*sin(t*1.3));
+  vec2 pb = vec2(-0.38*cos(t*0.8 + 1.0), -0.24*sin(t + 2.0));
+  col += uA * 0.02 * exp(-dot(c - pa, c - pa)*2.6);
+  col += uB * 0.018 * exp(-dot(c - pb, c - pb)*2.2);
+  col += mix(uA, uB, 0.5) * 0.012 * exp(-r*r*5.0);
+  gl_FragColor = vec4(col, 1.0);
+}`;
+
+const FS_FINAL = `
+uniform sampler2D tDiffuse;
+uniform float uExposure, uVig;
+varying vec2 vUv;
+vec3 aces(vec3 x){ return clamp((x*(2.51*x + 0.03)) / (x*(2.43*x + 0.59) + 0.14), 0.0, 1.0); }
+float hash(vec2 p){ return fract(sin(dot(p, vec2(12.9898, 78.233))) * 43758.5453); }
+void main(){
+  vec3 c = texture2D(tDiffuse, vUv).rgb;
+  vec2 q = vUv - 0.5;
+  c *= 1.0 - uVig * smoothstep(0.1, 0.75, dot(q, q)*1.7);
+  c = aces(c * uExposure);
+  c = pow(c, vec3(1.0/2.2));
+  c += (hash(gl_FragCoord.xy) - 0.5) / 255.0;
+  gl_FragColor = vec4(c, 1.0);
+}`;
+const VS_PASS = `varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); }`;
+
+/* =====================================================================
+   渲染器 / 场景
+   ===================================================================== */
+const canvas = $('#stage');
+let renderer;
+try {
+  renderer = new V.WebGLRenderer({ canvas, antialias: false, alpha: false, powerPreference: 'high-performance' });
+  if (!renderer.capabilities.isWebGL2) throw new Error('WebGL2 required');
+} catch (e) {
+  $('#fatal').style.display = 'grid';
+  console.warn(e);
+  return;
+}
+renderer.toneMapping = V.NoToneMapping;
+renderer.setClearColor(0x000000, 1);
+let pixelRatio = Math.min(window.devicePixelRatio || 1, coarse ? 1.75 : 2);
+renderer.setPixelRatio(pixelRatio);
+
+const scene = new V.Scene();
+const camera = new V.PerspectiveCamera(36, 1, 0.1, 200);
+const CAM_DIR = new V.Vector3(0.62, 0.42, 1).normalize();
+camera.position.copy(CAM_DIR).multiplyScalar(8);
+const controls = new V.OrbitControls(camera, canvas);
+controls.enableDamping = true; controls.dampingFactor = 0.06;
+controls.enablePan = false; controls.rotateSpeed = 0.7; controls.zoomSpeed = 0.7;
+controls.minDistance = 2.2; controls.maxDistance = 30;
+controls.autoRotateSpeed = 0.55;
+
+const U = {
+  uN1: { value: 5 }, uN2: { value: 5 }, uC1: { value: 5 }, uC2: { value: 5 }, uW1: { value: 1 }, uW2: { value: 1 },
+  uMu: { value: 0 }, uPsiArg: { value: 0 }, uNeck: { value: 1 }, uYext: { value: 1 }, uQ: { value: 1 },
+  uPersp: { value: 0 }, uBreath: { value: 0 }, uTime: { value: 0 }, uScale: { value: 1 }, uRot: { value: new V.Matrix4() },
+  uPal: { value: null }, uColorMode: { value: 0 }, uNbar: { value: 5 }, uCamDist: { value: 8 }, uCamDist2: { value: 8 },
+  uMat: { value: 0 }, uOpacity: { value: 0.5 }, uDens: { value: 1 }, uWire: { value: 1 }, uPx: { value: 4 }, uPtGain: { value: 1 },
+  uGap: { value: 0 }, uShrink: { value: 0 }, uSep3D: { value: 0 }, uSepMode: { value: new V.Vector3(1, 0, 0) }, uPiv: { value: new V.Vector2(1, 1) },
+  uSepW: { value: new Float32Array(162) }, uSepFocus: { value: 0 }, uSepEdge: { value: 0 }, uHiFocus: { value: 0 }, uSolo: { value: 0 }
+};
+const pick = (...keys) => { const o = { uWarp: { value: 1 } }; keys.forEach(k => o[k] = U[k]); return o; };
+const MAPU = ['uN1', 'uN2', 'uC1', 'uC2', 'uW1', 'uW2', 'uMu', 'uPsiArg', 'uNeck', 'uYext', 'uQ', 'uPersp', 'uBreath', 'uTime', 'uScale', 'uRot', 'uPal', 'uColorMode', 'uNbar', 'uCamDist',
+  'uGap', 'uShrink', 'uSep3D', 'uSepMode', 'uPiv', 'uSepW', 'uSepFocus', 'uHiFocus', 'uSolo'];
+for (let i = 0; i < 81; i++) U.uSepW.value[2 * i] = 1;
+
+// --- palette texture
+const PAL_N = 256;
+const palData = new Uint8Array(PAL_N * 4);
+const palCur = new Float32Array(PAL_N * 3), palTgt = new Float32Array(PAL_N * 3);
+const palTex = new V.DataTexture(palData, PAL_N, 1, V.RGBAFormat, V.UnsignedByteType);
+palTex.colorSpace = V.SRGBColorSpace; palTex.wrapS = V.RepeatWrapping; palTex.wrapT = V.ClampToEdgeWrapping;
+palTex.magFilter = palTex.minFilter = V.LinearFilter; palTex.generateMipmaps = false;
+U.uPal.value = palTex;
+const hex2rgb = h => [parseInt(h.slice(1, 3), 16) / 255, parseInt(h.slice(3, 5), 16) / 255, parseInt(h.slice(5, 7), 16) / 255];
+function paletteArray(id, out) {
+  const st = PALETTES[id].stops.map(hex2rgb), m = st.length;
+  for (let i = 0; i < PAL_N; i++) {
+    const x = i / PAL_N * m, a = Math.floor(x) % m, b = (a + 1) % m;
+    let f = x - Math.floor(x); f = f * f * (3 - 2 * f);
+    for (let c = 0; c < 3; c++) out[i * 3 + c] = lerp(st[a][c], st[b][c], f);
+  }
+}
+let palDirty = true;
+function pushPalette() {
+  for (let i = 0; i < PAL_N; i++) {
+    palData[i * 4] = Math.round(palCur[i * 3] * 255); palData[i * 4 + 1] = Math.round(palCur[i * 3 + 1] * 255);
+    palData[i * 4 + 2] = Math.round(palCur[i * 3 + 2] * 255); palData[i * 4 + 3] = 255;
+  }
+  palTex.needsUpdate = true;
+}
+const srgb2lin = c => c <= 0.04045 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+function setPalette(id, instant) {
+  paletteArray(id, palTgt);
+  if (instant) { palCur.set(palTgt); pushPalette(); palDirty = false; } else palDirty = true;
+  const s = PALETTES[id].stops;
+  document.documentElement.style.setProperty('--accent', s[2]);
+  document.documentElement.style.setProperty('--accent2', s[3]);
+  const a = hex2rgb(s[1]).map(srgb2lin), b = hex2rgb(s[4]).map(srgb2lin), c = hex2rgb(s[2]).map(srgb2lin);
+  bgTarget.a = a; bgTarget.b = b; bgTarget.c = c;
+}
+
+// --- background
+const bgTarget = { a: [0, 0, 0], b: [0, 0, 0], c: [1, 1, 1] };
+const bgU = { uA: { value: new V.Vector3() }, uB: { value: new V.Vector3() }, uAspect: { value: 1 }, uTime: U.uTime, uCenter: { value: new V.Vector2() } };
+const bgGeo = new V.BufferGeometry();
+bgGeo.setAttribute('position', new V.BufferAttribute(new Float32Array([-1, -1, 0, 3, -1, 0, -1, 3, 0]), 3));
+const bg = new V.Mesh(bgGeo, new V.ShaderMaterial({ vertexShader: VS_BG, fragmentShader: FS_BG, uniforms: bgU, depthTest: false, depthWrite: false }));
+bg.frustumCulled = false; bg.renderOrder = -100; scene.add(bg);
+
+// --- stars
+const starU = { uPx: { value: 2 }, uTime: U.uTime, uTint: { value: new V.Vector3(1, 1, 1) } };
+(function () {
+  const n = 1400, pos = new Float32Array(n * 3), rnd = new Float32Array(n * 3);
+  let seed = 7; const rand = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
+  for (let i = 0; i < n; i++) {
+    const u = rand() * 2 - 1, a = rand() * Math.PI * 2, r = 70 + rand() * 30, s = Math.sqrt(1 - u * u);
+    pos[i * 3] = r * s * Math.cos(a); pos[i * 3 + 1] = r * u; pos[i * 3 + 2] = r * s * Math.sin(a);
+    rnd[i * 3] = rand(); rnd[i * 3 + 1] = rand(); rnd[i * 3 + 2] = rand();
+  }
+  const g = new V.BufferGeometry();
+  g.setAttribute('position', new V.BufferAttribute(pos, 3)); g.setAttribute('aRnd', new V.BufferAttribute(rnd, 3));
+  const stars = new V.Points(g, new V.ShaderMaterial({ vertexShader: VS_STAR, fragmentShader: FS_STAR, uniforms: starU, transparent: true, depthTest: false, depthWrite: false, blending: V.AdditiveBlending }));
+  stars.frustumCulled = false; stars.renderOrder = -50; scene.add(stars);
+})();
+
+// --- manifold objects
+const surfMat = new V.ShaderMaterial({
+  vertexShader: VS_SURFACE, fragmentShader: FS_SURFACE, uniforms: pick(...MAPU, 'uMat', 'uOpacity', 'uDens', 'uSepEdge'),
+  side: V.DoubleSide, transparent: true, depthWrite: false,
+  polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1
+});
+const lineMat = new V.ShaderMaterial({
+  vertexShader: VS_LINE, fragmentShader: FS_LINE, uniforms: pick(...MAPU, 'uWire'),
+  transparent: true, depthWrite: false, blending: V.AdditiveBlending
+});
+const pointMat = new V.ShaderMaterial({
+  vertexShader: VS_POINT, fragmentShader: FS_POINT, uniforms: pick(...MAPU, 'uPx', 'uCamDist2', 'uPtGain'),
+  transparent: true, depthWrite: false, blending: V.AdditiveBlending
+});
+
+const pickMat = new V.ShaderMaterial({
+  vertexShader: VS_SURFACE, uniforms: pick(...MAPU), side: V.DoubleSide,
+  fragmentShader: GLSL_VARY + 'void main(){ gl_FragColor = vec4((vPatch.xy + 0.5)/16.0, 1.0, 1.0); }'
+});
+const pickRT = new V.WebGLRenderTarget(1, 1);
+
+function surfaceGeometry(res) {
+  const g = new V.InstancedBufferGeometry(), n = res + 1;
+  const pos = new Float32Array(n * n * 3), idx = new Uint16Array(res * res * 6);
+  for (let j = 0, o = 0; j < n; j++) for (let i = 0; i < n; i++) { pos[o++] = i / res; pos[o++] = j / res; pos[o++] = 0; }
+  for (let j = 0, o = 0; j < res; j++) for (let i = 0; i < res; i++) {
+    const a = j * n + i, b = a + 1, c = a + n, d = c + 1;
+    idx[o++] = a; idx[o++] = b; idx[o++] = d; idx[o++] = a; idx[o++] = d; idx[o++] = c;
+  }
+  g.setAttribute('position', new V.BufferAttribute(pos, 3)); g.setIndex(new V.BufferAttribute(idx, 1));
+  return g;
+}
+function lineGeometry(res, cells) {
+  const g = new V.InstancedBufferGeometry();
+  const L = Math.min(cells, res), seg = res, pos = new Float32Array((L + 1) * 2 * seg * 2 * 3);
+  let o = 0;
+  for (let dir = 0; dir < 2; dir++) for (let i = 0; i <= L; i++) {
+    const c = Math.round(i / L * res) / res, e = (i === 0 || i === L) ? 1 : 0;
+    for (let k = 0; k < seg; k++) for (let m = 0; m < 2; m++) {
+      const v = (k + m) / seg;
+      pos[o++] = dir ? v : c; pos[o++] = dir ? c : v; pos[o++] = e;
+    }
+  }
+  g.setAttribute('position', new V.BufferAttribute(pos, 3));
+  return g;
+}
+const MAX_PARTICLES = 80000;
+function particleGeometry() {
+  const g = new V.BufferGeometry(), pos = new Float32Array(MAX_PARTICLES * 3), rnd = new Float32Array(MAX_PARTICLES * 3);
+  let seed = 20240607; const rand = () => (seed = (seed * 48271) % 2147483647) / 2147483647;
+  for (let i = 0; i < MAX_PARTICLES * 3; i++) { pos[i] = rand(); rnd[i] = rand(); }
+  g.setAttribute('position', new V.BufferAttribute(pos, 3)); g.setAttribute('aRnd', new V.BufferAttribute(rnd, 3));
+  return g;
+}
+const surface = new V.Mesh(surfaceGeometry(P.subdiv), surfMat);
+const lines = new V.LineSegments(lineGeometry(P.subdiv, P.wireDensity), lineMat);
+const points = new V.Points(particleGeometry(), pointMat);
+pointMat.uniforms.uWarp.value = 0.45;
+surface.frustumCulled = lines.frustumCulled = points.frustumCulled = false;
+surface.renderOrder = 1; lines.renderOrder = 2; points.renderOrder = 3;
+scene.add(surface, lines, points);
+// --- 「解 ↔ 线」对照用的采样线与标记点（位置每帧由 JS 给出）
+const matchU = { uCol: { value: new V.Vector3(1, 1, 1) }, uPx: { value: 12 } };
+const curveMesh = (function () {
+  const n = 97, g = new V.BufferGeometry(), side = new Float32Array(n * 2), idx = new Uint16Array((n - 1) * 6);
+  for (let i = 0; i < n; i++) { side[i * 2] = 1; side[i * 2 + 1] = -1; }
+  for (let i = 0, o = 0; i < n - 1; i++) { const a = i * 2; idx[o++] = a; idx[o++] = a + 1; idx[o++] = a + 3; idx[o++] = a; idx[o++] = a + 3; idx[o++] = a + 2; }
+  g.setAttribute('position', new V.BufferAttribute(new Float32Array(n * 6), 3));
+  g.setAttribute('aSide', new V.BufferAttribute(side, 1)); g.setIndex(new V.BufferAttribute(idx, 1));
+  const m = new V.Mesh(g, new V.ShaderMaterial({
+    uniforms: matchU, side: V.DoubleSide, transparent: true, depthWrite: false, blending: V.AdditiveBlending,
+    vertexShader: 'attribute float aSide; varying float vS; void main(){ vS = aSide; gl_Position = vec4(position, 1.0); }',
+    fragmentShader: 'uniform vec3 uCol; varying float vS; void main(){ float a = 1.0 - smoothstep(0.25, 1.0, abs(vS)); gl_FragColor = vec4(mix(uCol, vec3(1.0), 0.7) * a * 1.5, 1.0); }'
+  }));
+  m.frustumCulled = false; m.renderOrder = 4; m.visible = false; return m;
+})();
+const markPts = (function () {
+  const g = new V.BufferGeometry();
+  g.setAttribute('position', new V.BufferAttribute(new Float32Array(13 * 3), 3));
+  g.setAttribute('aSel', new V.BufferAttribute(new Float32Array(13), 1));
+  const m = new V.Points(g, new V.ShaderMaterial({
+    uniforms: matchU, transparent: true, depthWrite: false,
+    vertexShader: `attribute float aSel; uniform float uPx; varying float vSel;
+      void main(){ vSel = aSel; gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0); gl_Position.z -= 0.0012 * gl_Position.w; gl_PointSize = uPx * (1.0 + 0.7*aSel); }`,
+    fragmentShader: `uniform vec3 uCol; varying float vSel;
+      void main(){
+        float d = length(gl_PointCoord - 0.5) * 2.0;
+        if (d > 1.0) discard;
+        float core = 1.0 - smoothstep(0.34, 0.48, d);
+        float ring = smoothstep(0.56, 0.66, d) * (1.0 - smoothstep(0.84, 1.0, d)) * (0.35 + 0.65*vSel);
+        vec3 c = d < 0.52 ? vec3(1.7) : mix(uCol, vec3(1.0), 0.45)*1.6;
+        gl_FragColor = vec4(c, max(core, ring));
+      }`
+  }));
+  m.frustumCulled = false; m.renderOrder = 5; m.visible = false; return m;
+})();
+scene.add(curveMesh, markPts);
+
+let geoKey = '';
+function syncGeometry() {
+  const key = P.subdiv + '/' + P.wireDensity;
+  if (key === geoKey) return;
+  const [s0, l0] = geoKey.split('/');
+  if (String(P.subdiv) !== s0) { surface.geometry.dispose(); surface.geometry = surfaceGeometry(P.subdiv); }
+  lines.geometry.dispose(); lines.geometry = lineGeometry(P.subdiv, P.wireDensity);
+  geoKey = key;
+}
+geoKey = P.subdiv + '/' + P.wireDensity;
+
+function applyMaterial() {
+  const m = P.material;
+  U.uMat.value = m === 'glass' ? 0 : m === 'solid' ? 1 : 2;
+  if (m === 'solid') {
+    surfMat.transparent = false; surfMat.depthWrite = true; surfMat.blending = V.NormalBlending; surfMat.forceSinglePass = true;
+  } else if (m === 'glass') {
+    surfMat.transparent = true; surfMat.depthWrite = false; surfMat.forceSinglePass = false;
+    surfMat.blending = V.CustomBlending; surfMat.blendEquation = V.AddEquation; surfMat.blendSrc = V.OneFactor; surfMat.blendDst = V.OneMinusSrcAlphaFactor;
+    surfMat.blendSrcAlpha = V.OneFactor; surfMat.blendDstAlpha = V.OneMinusSrcAlphaFactor;
+  } else {
+    surfMat.transparent = true; surfMat.depthWrite = false; surfMat.forceSinglePass = true; surfMat.blending = V.AdditiveBlending;
+  }
+  surfMat.needsUpdate = true;
+}
+
+// --- post-processing
+// 无法渲染到浮点纹理的设备：退回 8 位缓冲并关闭辉光
+const hdrOK = renderer.extensions.has('EXT_color_buffer_float') || renderer.extensions.has('EXT_color_buffer_half_float');
+const rt = new V.WebGLRenderTarget(4, 4, { type: hdrOK ? V.HalfFloatType : V.UnsignedByteType, samples: coarse ? 2 : 4 });
+const composer = new V.EffectComposer(renderer, rt);
+composer.addPass(new V.RenderPass(scene, camera));
+const bloom = new V.UnrealBloomPass(new V.Vector2(4, 4), 0.8, 0.72, 0.2);
+bloom.enabled = hdrOK;
+composer.addPass(bloom);
+const finalPass = new V.ShaderPass(new V.ShaderMaterial({
+  uniforms: { tDiffuse: { value: null }, uExposure: { value: 1.0 }, uVig: { value: 0.55 } },
+  vertexShader: VS_PASS, fragmentShader: FS_FINAL, depthTest: false, depthWrite: false
+}));
+composer.addPass(finalPass);
+
+/* =====================================================================
+   布局 / 相机
+   ===================================================================== */
+let W = 1, H = 1, zoomK = 1, fitDist = 8;
+const off = { x: 0, y: 0, tx: 0, ty: 0 };
+let shotMode = false;
+function layoutInsets() {
+  if (document.body.classList.contains('ui-hidden') || shotMode) return { r: 0, b: 0, t: 0 };
+  if (mqMobile.matches) {
+    const peek = document.body.classList.contains('sheet-peek');
+    return { r: 0, b: peek ? 118 : Math.min(H * 0.58, 520), t: (peek ? 60 : 104) + (P.match ? 34 : 0) };
+  }
+  return { r: $('#panel').offsetWidth + 16, b: 0, t: 0 };
+}
+function computeFit() {
+  const ins = layoutInsets();
+  const ew = Math.max(120, W - ins.r), eh = Math.max(120, H - ins.b - ins.t);
+  const R = 2.3, th = Math.tan(camera.fov * Math.PI / 360);
+  fitDist = Math.max(R / (th * eh / H), R / (th * ew / H));
+  off.tx = ins.r / 2; off.ty = (ins.b - ins.t) / 2;
+}
+function resize() {
+  const d0 = camera.position.length();
+  zoomK = d0 / fitDist;
+  W = window.innerWidth; H = window.innerHeight;
+  renderer.setPixelRatio(pixelRatio);
+  renderer.setSize(W, H, false);
+  composer.setPixelRatio(pixelRatio);
+  composer.setSize(W, H);
+  camera.aspect = W / H;
+  computeFit();
+  camera.position.setLength(clamp(fitDist * zoomK, controls.minDistance, controls.maxDistance));
+  bgU.uAspect.value = W / H;
+}
+function relayout() {   // panel shown / hidden: keep zoom ratio, glide the view offset
+  zoomK = camera.position.length() / fitDist;
+  computeFit();
+  camTween = { from: camera.position.length(), to: clamp(fitDist * zoomK, controls.minDistance, controls.maxDistance), t: 0 };
+}
+let camTween = null;
+
+/* =====================================================================
+   演变引擎
+   ===================================================================== */
+const autoState = {};
+const stair = u => Math.floor(u) + sstep(0.16, 0.84, u - Math.floor(u));
+const stairInv = v => { const f = v - Math.floor(v); return Math.floor(v) + 0.16 + 0.68 * invSmooth(f); };
+function syncAuto(k) {
+  const d = DEF[k], s = autoState[k] || (autoState[k] = { dir: 1, phase: 0, u: 0 });
+  if (d.auto === 'sine') {
+    let u = clamp((P[k] - d.lo) / (d.hi - d.lo), 0, 1);
+    if (d.dwell) u = u <= 0 ? 0 : d.dwell + (1 - d.dwell) * invSmooth(u);
+    const a = Math.asin(2 * u - 1);
+    s.phase = Math.cos(s.phase) >= 0 ? a : Math.PI - a;
+  } else if (d.auto === 'stair') {
+    s.u = stairInv(clamp(P[k], d.min, d.max));
+  }
+}
+AUTO_KEYS.forEach(syncAuto);
+let dragging = null, tween = null, simTime = 0;
+
+function evolve(dt) {
+  if (!P.auto || tween) return;
+  const sp = P.speed * dt;
+  for (const k of AUTO_KEYS) {
+    if (!P.autos[k] || dragging === k) continue;
+    if (k === 'n2' && P.link) continue;
+    if (k === 'gap' && gapAnim) continue;
+    const d = DEF[k], s = autoState[k];
+    if (d.auto === 'loop') {
+      P[k] = ((P[k] + d.rate * sp) % 360 + 360) % 360;
+    } else if (d.auto === 'sine') {
+      s.phase += d.rate * sp;
+      let u = 0.5 + 0.5 * Math.sin(s.phase);
+      if (d.dwell) u = sstep(d.dwell, 1, u);      // 在最小值处停留片刻（完全拼合）
+      const tgt = d.lo + (d.hi - d.lo) * u;
+      P[k] += (tgt - P[k]) * (1 - Math.exp(-dt * 6));
+      if (d.dwell && u === 0 && P[k] < 2e-3) P[k] = d.lo;
+    } else {
+      s.u += s.dir * d.rate * sp;
+      if (s.u >= d.hi) { s.u = d.hi; s.dir = -1; } else if (s.u <= d.lo) { s.u = d.lo; s.dir = 1; }
+      P[k] = stair(s.u);
+    }
+    ui.syncNum(k);
+  }
+  if (P.link && P.autos.n) { P.n2 = P.n; ui.syncNum('n2'); }
+}
+
+/* ---------- 面片分离 / 拼合 ---------- */
+let gapAnim = null, sepLast = 0.55, sepSnap = true;
+const sepW = U.uSepW.value, sepSt = { mode: [1, 0, 0], d3: 0, focus: 0, maxW: 1, hi: 0, solo: 0 };
+function animateGap(to, dur) {
+  if (tween) { delete tween.to.gap; delete tween.from.gap; }
+  P.autos.gap = false; activePreset = null;
+  gapAnim = { from: P.gap, to, t: 0, dur: dur || 1.5 };
+  ui.syncAll();
+}
+function sepIsOpen() { return (gapAnim ? gapAnim.to : P.gap) > 0.02 || !!P.autos.gap; }
+function toggleSep() {
+  const open = sepIsOpen();
+  if (open) { if (P.gap > 0.08) sepLast = P.gap; animateGap(0); } else animateGap(sepLast);
+  toast(open ? '拼合' : '分离');
+}
+function updateGapAnim(dt) {
+  if (!gapAnim) return;
+  if (dragging === 'gap') { gapAnim = null; return; }
+  gapAnim.t = Math.min(1, gapAnim.t + dt / gapAnim.dur);
+  const t = gapAnim.t, e = t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  P.gap = lerp(gapAnim.from, gapAnim.to, e); ui.syncNum('gap');
+  if (t >= 1) { gapAnim = null; syncAuto('gap'); ui.syncAll(); }
+}
+function selClamped() { return [Math.min(Math.round(P.selK1), patchInfo.c1 - 1), Math.min(Math.round(P.selK2), patchInfo.c2 - 1)]; }
+function inSelection(k1, k2) {
+  const [a, b] = selClamped();
+  return P.sepGroup === 'row' ? k1 === a : P.sepGroup === 'col' ? k2 === b : (k1 === a && k2 === b);
+}
+function updateSep(dt) {
+  const k = sepSnap ? 1 : dt > 0 ? 1 - Math.exp(-dt * 6.5) : 0;
+  sepSnap = false;
+  const tm = P.sepGroup === 'row' ? [0, 1, 0] : P.sepGroup === 'col' ? [0, 0, 1] : [1, 0, 0];
+  for (let i = 0; i < 3; i++) sepSt.mode[i] += (tm[i] - sepSt.mode[i]) * k;
+  sepSt.d3 += ((P.sepDir === '3d' ? 1 : 0) - sepSt.d3) * k;
+  const one = P.sepScope === 'one';
+  sepSt.focus += ((one ? 1 : 0) - sepSt.focus) * k;
+  sepSt.hi += ((P.match ? 1 : 0) - sepSt.hi) * k;
+  sepSt.solo += ((P.match && P.solo ? 1 : 0) - sepSt.solo) * k;
+  const hs = selClamped(), hp = P.match ? M.hoverPatch : null;
+  let mw = 0;
+  for (let k2 = 0; k2 < 9; k2++) for (let k1 = 0; k1 < 9; k1++) {
+    const i = 2 * (k2 * 9 + k1), tgt = !one || inSelection(k1, k2) ? 1 : 0;
+    sepW[i] += (tgt - sepW[i]) * k;
+    if (Math.abs(tgt - sepW[i]) < 1e-4) sepW[i] = tgt;
+    if (k1 < patchInfo.c1 && k2 < patchInfo.c2) mw = Math.max(mw, sepW[i]);
+    // 对照高亮：选中的那一片，以及图例里鼠标悬停的那一片
+    const th = (k1 === hs[0] && k2 === hs[1]) || (hp && k1 === hp[0] && k2 === hp[1]) ? 1 : 0;
+    sepW[i + 1] += (th - sepW[i + 1]) * k;
+    if (Math.abs(th - sepW[i + 1]) < 1e-4) sepW[i + 1] = th;
+  }
+  U.uHiFocus.value = sepSt.hi; U.uSolo.value = sepSt.solo;
+  sepSt.maxW = mw;
+  const open = sstep(0, 0.15, P.gap);
+  U.uGap.value = P.gap;
+  U.uShrink.value = P.shrink * open;
+  U.uSep3D.value = sepSt.d3;
+  U.uSepMode.value.set(sepSt.mode[0], sepSt.mode[1], sepSt.mode[2]);
+  U.uSepFocus.value = sepSt.focus * sstep(0, 0.12, P.gap);
+  U.uSepEdge.value = open * (P.material === 'solid' ? 0.5 : 1);
+}
+// 在屏幕坐标处拾取面片：把 1×1 像素的视锥渲染到离屏缓冲，颜色里编码 (k1, k2)
+function pickPatch(cx, cy) {
+  const buf = new Uint8Array(4), vis = surface.visible, mat = surface.material;
+  camera.setViewOffset(W, H, off.x + cx, off.y + cy, 1, 1); camera.updateProjectionMatrix();
+  surface.material = pickMat; surface.visible = true;
+  renderer.setRenderTarget(pickRT); renderer.clear();
+  renderer.render(surface, camera);
+  renderer.readRenderTargetPixels(pickRT, 0, 0, 1, 1, buf);
+  renderer.setRenderTarget(null);
+  surface.material = mat; surface.visible = vis;
+  camera.setViewOffset(W, H, off.x, off.y, W, H); camera.updateProjectionMatrix();
+  if (buf[2] < 128) return null;
+  return [Math.floor(buf[0] * 16 / 255), Math.floor(buf[1] * 16 / 255)];
+}
+function pickAt(cx, cy) {
+  const hit = pickPatch(cx, cy);
+  if (!hit) return null;
+  const same = P.sepScope === 'one' && inSelection(hit[0], hit[1]) && sepIsOpen();
+  if (same) {
+    if (P.gap > 0.08) sepLast = P.gap;
+    animateGap(0); toast('归位');
+  } else {
+    P.selK1 = hit[0]; P.selK2 = hit[1]; P.sepScope = 'one'; activePreset = null;
+    if (!sepIsOpen()) animateGap(sepLast); else ui.syncAll();
+    toast(P.sepGroup === 'row' ? `抽出 k₁ = ${hit[0]} 行` : P.sepGroup === 'col' ? `抽出 k₂ = ${hit[1]} 列` : `抽出面片 (${hit[0]}, ${hit[1]})`);
+  }
+  return hit;
+}
+
+/* ---------- 解 ↔ 线：逐一对照 ----------
+   用与着色器完全相同的公式在 JS 里求出选中面片上若干点的 (z₁, z₂)。
+   同一份数据既填数值表，也用来在画面上放标记，所以「表里的一行」就是「图上的一点」。 */
+const M = { samples: [], hoverPt: -1, hoverPatch: null, prevColor: null };
+const TAU = Math.PI * 2, CURVE_N = 96, MARK_MAX = 13;
+function cpwJ(x, y, p) {
+  const r2 = x * x + y * y;
+  if (r2 < 1e-18) return [0, 0];
+  const a = (y === 0 && x > 0) ? 0 : Math.atan2(y, x) * p, m = Math.pow(r2, 0.5 * p);
+  return [m * Math.cos(a), m * Math.sin(a)];
+}
+// ξ = x + iy 处、分支 (k1, k2) 上的解：r = cos²ξ，z₁ = s·ω₁^k1·r^(1/n1)，z₂ = s·ω₂^k2·(1−r)^(1/n2)，ψ ≠ 0 时再做同伦牛顿延拓
+function solveAt(x, y, k1, k2) {
+  const n1 = U.uN1.value, n2 = U.uN2.value, cx = Math.cos(x), sx = Math.sin(x), ch = Math.cosh(y), sh = Math.sinh(y);
+  const c0 = cx * ch, c1 = -sx * sh;
+  let [ax, ay] = cpwJ(c0, c1, 2 / n1), [bx, by] = cpwJ(sx * ch, cx * sh, 2 / n2);
+  const mu = U.uMu.value; let mx = 0, my = 0;
+  if (mu > 1e-5) {
+    const am = U.uPsiArg.value + TAU * (k1 / n1 + k2 / n2);
+    mx = mu * Math.cos(am); my = mu * Math.sin(am);
+    for (let i = 0; i < 9; i++) {
+      const s = Math.min(1, (i + 1) / 7), px = mx * s, py = my * s;
+      const [a1x, a1y] = cpwJ(ax, ay, n1 - 1), [a2x, a2y] = cpwJ(bx, by, n2 - 1);
+      const uvx = ax * bx - ay * by, uvy = ax * by + ay * bx;
+      const gx = a1x * ax - a1y * ay + a2x * bx - a2y * by - 1 - (px * uvx - py * uvy);
+      const gy = a1x * ay + a1y * ax + a2x * by + a2y * bx - (px * uvy + py * uvx);
+      const g1x = n1 * a1x - (px * bx - py * by), g1y = n1 * a1y - (px * by + py * bx);
+      const g2x = n2 * a2x - (px * ax - py * ay), g2y = n2 * a2y - (px * ay + py * ax);
+      const d = g1x * g1x + g1y * g1y + g2x * g2x + g2y * g2y + 1e-7;
+      ax -= (gx * g1x + gy * g1y) / d; ay -= (gy * g1x - gx * g1y) / d;
+      bx -= (gx * g2x + gy * g2y) / d; by -= (gy * g2x - gx * g2y) / d;
+    }
+  }
+  // 代回方程：u₁^n1 + u₂^n2 − μ·u₁u₂，应当等于 1
+  const [p1x, p1y] = cpwJ(ax, ay, n1), [p2x, p2y] = cpwJ(bx, by, n2);
+  const uvx = ax * bx - ay * by, uvy = ax * by + ay * bx;
+  const chk = [p1x + p2x - (mx * uvx - my * uvy), p1y + p2y - (mx * uvy + my * uvx)];
+  // 乘上单位根与收缩系数
+  const t1 = TAU * k1 / n1, t2 = TAU * k2 / n2, e1x = Math.cos(t1), e1y = Math.sin(t1), e2x = Math.cos(t2), e2y = Math.sin(t2);
+  const nk = U.uNeck.value;
+  const z1 = [nk * (ax * e1x - ay * e1y), nk * (ax * e1y + ay * e1x)], z2 = [nk * (bx * e2x - by * e2y), nk * (bx * e2y + by * e2x)];
+  // 与 cyRot / cySepInit / cyProj 相同的四维旋转、分离位移与投影
+  let p = [z1[0], z2[0], z1[1], z2[1]];
+  const rad = Math.hypot(p[0], p[1], p[2], p[3]), br = 1 + U.uBreath.value * Math.sin(U.uTime.value * 1.15 - 2.4 * rad);
+  const gs = sepW[2 * (k2 * 9 + k1)], md = U.uSepMode.value, a = md.x * 0.70710678;
+  const E1 = [e1x, 0, e1y, 0], E2 = [0, e2x, 0, e2y], piv = U.uPiv.value, S = 1 - U.uShrink.value * gs;
+  const D = [0, 0, 0, 0], v = [0, 0, 0, 0];
+  for (let i = 0; i < 4; i++) {
+    D[i] = (a + md.y) * E1[i] + (a + md.z) * E2[i];
+    const pv = nk * ((md.x + md.y) * piv.x * E1[i] + (md.x + md.z) * piv.y * E2[i]);
+    v[i] = pv + (p[i] * br - pv) * S;
+  }
+  const R = [0, 0, 0, 0], q = [0, 0, 0, 0];
+  for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) { R[r] += rotA[r * 4 + c] * D[c]; q[r] += rotA[r * 4 + c] * v[c]; }
+  const dl = Math.sqrt(R[0] * R[0] + R[1] * R[1] + R[2] * R[2] + 0.02), s3 = U.uSep3D.value, g = U.uGap.value * gs;
+  for (let i = 0; i < 4; i++) q[i] += ((i < 3 ? R[i] / dl : 0) * s3 + R[i] * (1 - s3)) * g;
+  const f = U.uScale.value / (1 - U.uPersp.value * 2.2 * Math.tanh(q[3] / 2.2));
+  return { r: [c0 * c0 - c1 * c1, 2 * c0 * c1], z1, z2, chk, w: [q[0] * f, q[1] * f, q[2] * f], scr: null };
+}
+const tmpV = new V.Vector3();
+function toScreen(w) {
+  tmpV.set(w[0], w[1], w[2]).applyMatrix4(camera.matrixWorldInverse);
+  const ok = tmpV.z < -0.05;
+  tmpV.applyMatrix4(camera.projectionMatrix);
+  return [(tmpV.x * 0.5 + 0.5) * W, (0.5 - tmpV.y * 0.5) * H, tmpV.z, ok];
+}
+function activePt() { return M.hoverPt >= 0 ? M.hoverPt : P.sampSel; }
+// 面片的代表色（与着色器里按面片 / 按相位着色时取色板的位置一致）
+function patchRGB(k1, k2) {
+  const t = (P.colorMode === 'phase' ? k1 / U.uN1.value + k2 / U.uN2.value
+    : (k1 + k2 / patchInfo.c2 + 0.25) / patchInfo.c1 + 0.02 * Math.sin(k2 * 2.4)) + 0.04;
+  const i = Math.floor((t - Math.floor(t)) * PAL_N) % PAL_N;
+  return [palTgt[i * 3], palTgt[i * 3 + 1], palTgt[i * 3 + 2]];
+}
+const rgbCss = c => `rgb(${Math.round(c[0] * 255)},${Math.round(c[1] * 255)},${Math.round(c[2] * 255)})`;
+const marksEl = $('#marks'), markEls = [];
+for (let j = 0; j < MARK_MAX; j++) { const e = document.createElement('span'); e.className = 'mk'; e.innerHTML = `<b>${j + 1}</b><em></em>`; marksEl.append(e); markEls.push({ e, em: e.lastChild, txt: '', show: false, on: false }); }
+const curveScr = new Float64Array((CURVE_N + 1) * 4);
+function updateMatch() {
+  const on = !!P.match;
+  curveMesh.visible = markPts.visible = on;
+  if (marksEl.classList.contains('show') !== on) marksEl.classList.toggle('show', on);
+  if (!on) return;
+  camera.updateMatrixWorld();
+  const [k1, k2] = selClamped(), N = P.sampN, y = P.sampY * U.uYext.value, act = activePt();
+  const col = patchRGB(k1, k2);
+  matchU.uCol.value.set(srgb2lin(col[0]), srgb2lin(col[1]), srgb2lin(col[2]));
+  matchU.uPx.value = 12 * renderer.getPixelRatio();
+  // 采样点：r 在 [0, 1] 上等距（采样线偏离中线后 r 变为复数）
+  M.samples.length = N;
+  const mp = markPts.geometry.attributes.position, ms = markPts.geometry.attributes.aSel;
+  const pa = clamp(0.5 * U.uN2.value, 1, 2.2), pb = clamp(0.5 * U.uN1.value, 1, 2.2);
+  const gx = s => s < 0.5 ? 0.5 * Math.pow(2 * s, pa) : 1 - 0.5 * Math.pow(2 - 2 * s, pb);      // 让点沿曲线分布得更均匀的重参数化
+  for (let j = 0; j < N; j++) {
+    // 取点：「沿线均匀」把 r 取成三位小数的整齐值；「r 等距」则 r = 0, 1/(N−1), …, 1
+    let rr = j / (N - 1);
+    if (P.sampMode !== 'r' && j > 0 && j < N - 1) { const c = Math.cos(gx(1 - rr) * Math.PI / 2); rr = clamp(Math.round(c * c * 1000) / 1000, 0.001, 0.999); }
+    const s = solveAt(Math.acos(Math.sqrt(rr)), y, k1, k2);
+    s.scr = toScreen(s.w); M.samples[j] = s;
+    mp.setXYZ(j, s.w[0], s.w[1], s.w[2]); ms.setX(j, j === act ? 1 : 0);
+  }
+  // 编号标签：挤在一起时只留先到的（当前点优先），圆点本身始终都在
+  const placed = act >= 0 && M.samples[act].scr[3] ? [act] : [];
+  for (let j = 0; j < MARK_MAX; j++) {
+    const m = markEls[j];
+    let show = false;
+    if (j < N) {
+      const s = M.samples[j];
+      show = s.scr[3];
+      if (show && j !== act) {
+        for (const q of placed) { const t = M.samples[q].scr; if (Math.abs(t[0] - s.scr[0]) < 17 && Math.abs(t[1] - s.scr[1]) < 13) { show = false; break; } }
+        if (show) placed.push(j);
+      }
+      if (show) m.e.style.transform = `translate(${s.scr[0].toFixed(1)}px,${s.scr[1].toFixed(1)}px)`;
+      const isOn = j === act;
+      if (isOn !== m.on) { m.on = isOn; m.e.classList.toggle('on', isOn); }
+      if (isOn) {
+        const txt = `z₁ = ${fmtC(s.z1[0], s.z1[1], 3)}<br>z₂ = ${fmtC(s.z2[0], s.z2[1], 3)}`;
+        if (txt !== m.txt) { m.txt = txt; m.em.innerHTML = txt; }
+      }
+    }
+    if (show !== m.show) { m.show = show; m.e.classList.toggle('show', show); }
+  }
+  mp.needsUpdate = ms.needsUpdate = true;
+  markPts.geometry.setDrawRange(0, N);
+  // 采样线：屏幕空间里的一条细带
+  for (let i = 0; i <= CURVE_N; i++) {
+    const sc = toScreen(solveAt(gx(i / CURVE_N) * Math.PI / 2, y, k1, k2).w);
+    curveScr[i * 4] = sc[0]; curveScr[i * 4 + 1] = sc[1]; curveScr[i * 4 + 2] = sc[2]; curveScr[i * 4 + 3] = sc[3] ? 1 : 0;
+  }
+  const cp = curveMesh.geometry.attributes.position, hw = 2.1;
+  let nx = 0, ny = 1;
+  for (let i = 0; i <= CURVE_N; i++) {
+    const a = Math.max(0, i - 1), b = Math.min(CURVE_N, i + 1);
+    const tx = curveScr[b * 4] - curveScr[a * 4], ty = curveScr[b * 4 + 1] - curveScr[a * 4 + 1], tl = Math.hypot(tx, ty);
+    if (tl > 1e-4) { nx = -ty / tl; ny = tx / tl; }
+    const ok = curveScr[i * 4 + 3], px = curveScr[i * 4], py = curveScr[i * 4 + 1], z = ok ? curveScr[i * 4 + 2] - 0.0009 : 2;
+    cp.setXYZ(i * 2, (px + nx * hw) / W * 2 - 1, 1 - (py + ny * hw) / H * 2, z);
+    cp.setXYZ(i * 2 + 1, (px - nx * hw) / W * 2 - 1, 1 - (py - ny * hw) / H * 2, z);
+  }
+  cp.needsUpdate = true;
+}
+function markerAt(cx, cy) {
+  let best = -1, bd = 17;
+  for (let j = 0; j < M.samples.length; j++) {
+    const s = M.samples[j]; if (!s || !s.scr || !s.scr[3]) continue;
+    const d = Math.hypot(s.scr[0] - cx, s.scr[1] - cy);
+    if (d < bd) { bd = d; best = j; }
+  }
+  return best;
+}
+function setSel(k1, k2) { P.selK1 = clamp(k1, 0, patchInfo.c1 - 1); P.selK2 = clamp(k2, 0, patchInfo.c2 - 1); ui.syncAll(); }
+function lockPt(j, reveal) { P.sampSel = P.sampSel === j ? -1 : j; if (reveal && P.sampSel >= 0) ui.revealPt(j); }
+function setMatch(on) {
+  on = !!on; if (P.match === on) return;
+  P.match = on; M.hoverPt = -1; M.hoverPatch = null; canvas.style.cursor = '';
+  // 对照时按面片着色，离开时还原
+  if (on) { if (P.colorMode !== 'patch') { M.prevColor = P.colorMode; P.colorMode = 'patch'; } }
+  else { if (M.prevColor && P.colorMode === 'patch') P.colorMode = M.prevColor; M.prevColor = null; }
+  if (mqMobile.matches) relayout();
+  ui.syncAll();
+}
+function quickN(v) {
+  P.link = true; delete P.autos.n; delete P.autos.n2; activePreset = null;
+  startTween({ n: v, n2: v }, 1.3); ui.syncAll();
+}
+const MINUS = '−';
+function fmtR(v, d) { const s = Math.abs(v).toFixed(d); return (v < 0 && +s !== 0 ? MINUS : '') + s; }
+function fmtC(re, im, d, sp) {
+  const b = Math.abs(im).toFixed(d), neg = im < 0 && +b !== 0;
+  return fmtR(re, d) + (sp ? ' ' : '') + (neg ? MINUS : '+') + (sp ? ' ' : '') + b + 'i';
+}
+
+function startTween(target, dur) {
+  const from = {}, to = {};
+  for (const k of NUM_KEYS) {
+    if (target[k] === undefined || NO_TWEEN.includes(k)) continue;
+    if (k === 'gap' && gapAnim) gapAnim = null;
+    let a = P[k], b = target[k];
+    if (ANGLE_KEYS.includes(k)) { let dlt = ((b - a) % 360 + 540) % 360 - 180; b = a + dlt; }
+    if (Math.abs(a - b) > 1e-6) { from[k] = a; to[k] = b; }
+  }
+  tween = { from, to, t: 0, dur: dur || 1.9 };
+}
+function updateTween(dt) {
+  if (!tween) return;
+  tween.t = Math.min(1, tween.t + dt / tween.dur);
+  const e = tween.t < 0.5 ? 4 * tween.t ** 3 : 1 - Math.pow(-2 * tween.t + 2, 3) / 2;
+  for (const k in tween.to) {
+    let v = lerp(tween.from[k], tween.to[k], e);
+    if (ANGLE_KEYS.includes(k)) v = (v % 360 + 360) % 360;
+    P[k] = v; ui.syncNum(k);
+  }
+  if (tween.t >= 1) { tween = null; AUTO_KEYS.forEach(syncAuto); }
+}
+
+function applyPreset(id, instant) {
+  const pr = PRESETS.find(p => p.id === id); if (!pr) return;
+  const t = Object.assign(JSON.parse(JSON.stringify(BASE)), JSON.parse(JSON.stringify(pr.p)));
+  if (pr.p.n !== undefined && pr.p.n2 === undefined) t.n2 = t.n;
+  t.subdiv = P.subdiv; if (coarse) t.particleCount = Math.min(t.particleCount, 30);
+  activePreset = id;
+  applyState(t, instant);
+}
+function applyState(t, instant) {
+  for (const k of ['link', 'auto', 'spin', 'colorMode', 'palette', 'material', 'surface', 'wire', 'particles', 'sepGroup', 'sepDir', 'sepScope', 'wireDensity', 'selK1', 'selK2']) if (t[k] !== undefined) P[k] = t[k];
+  if (t.autos) P.autos = Object.assign({}, t.autos);
+  if (instant) { for (const k of NUM_KEYS) if (t[k] !== undefined) P[k] = t[k]; tween = null; gapAnim = null; sepSnap = true; AUTO_KEYS.forEach(syncAuto); }
+  else startTween(t);
+  setPalette(P.palette, instant);
+  applyMaterial(); syncGeometry();
+  ui.syncAll();
+}
+function randomize() {
+  const r = Math.random, pk = a => a[Math.floor(r() * a.length)];
+  const n = pk([3, 4, 5, 5, 6, 7]), asym = r() < 0.2;
+  const autos = { alpha: true };
+  for (const k of ['th1', 'th2', 'xw', 'yz', 'xy']) if (r() < 0.3) autos[k] = true;
+  if (r() < 0.25) autos.n = true;
+  const psi = r() < 0.3 ? 0.15 + r() * 0.45 : 0;
+  if (psi && r() < 0.6) autos.psiArg = true;
+  const mat = pk(['glass', 'glass', 'veil', 'solid']);
+  const t = Object.assign(JSON.parse(JSON.stringify(BASE)), {
+    n, n2: asym ? pk([3, 4, 6, 7]) : n, link: !asym, psi, psiArg: r() * 360, neck: r() < 0.25 ? 0.4 + r() * 0.5 : 1, ext: 0.8 + r() * 0.5,
+    alpha: r() * 360, th1: r() * 360, th2: r() * 360, xw: r() < 0.5 ? r() * 360 : 0, yz: r() < 0.5 ? r() * 360 : 0,
+    persp: r() < 0.35 ? r() * 0.25 : 0, breath: r() * 0.07,
+    colorMode: pk(['phase', 'phase', 'patch', 'curv', 'depth']), palette: pk(Object.keys(PALETTES)), material: mat,
+    opacity: 0.35 + r() * 0.4, surface: r() < 0.85, wire: r() < 0.7, particles: r() < 0.6,
+    wireDensity: pk([6, 8, 10, 12]), particleCount: coarse ? 12 : 10 + Math.floor(r() * 30), bloom: 0.6 + r() * 0.7, autos,
+    gap: r() < 0.2 ? 0.25 + r() * 0.45 : 0, shrink: r() * 0.1, sepGroup: pk(['patch', 'patch', 'row', 'col']), sepDir: pk(['4d', '3d'])
+  });
+  if (t.gap && r() < 0.5) autos.gap = true;
+  if (!t.surface && !t.wire && !t.particles) t.wire = true;
+  if (!t.surface) { t.wire = true; }
+  activePreset = null;
+  applyState(t, false);
+}
+
+/* =====================================================================
+   uniform 更新
+   ===================================================================== */
+const rotA = new Float64Array(16), rotB = new Float64Array(16), rotT = new Float64Array(16);
+function rotMul(i, j, deg) {      // rotA = R(i,j,deg) · rotA
+  const a = deg * Math.PI / 180, c = Math.cos(a), s = Math.sin(a);
+  rotB.fill(0); rotB[0] = rotB[5] = rotB[10] = rotB[15] = 1;
+  rotB[i * 4 + i] = c; rotB[i * 4 + j] = s; rotB[j * 4 + i] = -s; rotB[j * 4 + j] = c;
+  for (let r = 0; r < 4; r++) for (let q = 0; q < 4; q++) {
+    let v = 0; for (let k = 0; k < 4; k++) v += rotB[r * 4 + k] * rotA[k * 4 + q];
+    rotT[r * 4 + q] = v;
+  }
+  rotA.set(rotT);
+}
+let patchInfo = { c1: 5, c2: 5 };
+function updateUniforms(dt) {
+  const n1 = P.n, n2 = P.link ? P.n : P.n2, nb = (n1 + n2) / 2;
+  const c1 = Math.max(2, Math.ceil(n1 - 1e-4)), c2 = Math.max(2, Math.ceil(n2 - 1e-4));
+  U.uN1.value = n1; U.uN2.value = n2; U.uC1.value = c1; U.uC2.value = c2; U.uNbar.value = nb;
+  U.uW1.value = sstep(0, 1, n1 - (c1 - 1)); U.uW2.value = sstep(0, 1, n2 - (c2 - 1));
+  patchInfo.c1 = c1; patchInfo.c2 = c2;
+  surface.geometry.instanceCount = lines.geometry.instanceCount = c1 * c2;
+  // Dwork 形变：ψ 以奇点模长 ψ* 归一，μ = n̄·ψ·ψ*
+  const psiStar = nb > 2.001 ? Math.pow(nb - 2, -(nb - 2) / nb) : 1;
+  U.uMu.value = P.psi * psiStar * nb; U.uPsiArg.value = P.psiArg * Math.PI / 180;
+  // 截面收缩：保持外边界半径不变，让颈部收缩
+  const chY = Math.max(1.03, Math.cosh(P.ext) / Math.pow(P.neck, nb / 2)), Y = Math.acosh(chY);
+  U.uNeck.value = P.neck; U.uYext.value = Y;
+  U.uQ.value = lerp(clamp(nb / 2, 1, 1.7), 1, sstep(1.1, 2.6, Y));
+  const ext4 = Math.hypot(P.neck * Math.pow(chY, 2 / n1), P.neck * Math.pow(Math.sinh(Y), 2 / n2));
+  updateSep(dt);
+  U.uPiv.value.set(Math.pow(2, -1 / n1), Math.pow(2, -1 / n2));
+  // 分离后整体略微缩小，保证外推的面片仍在画面内
+  U.uScale.value = 2.05 / Math.max(ext4 + 0.85 * P.gap * sepSt.maxW, 0.6) / (1 + 1.5 * P.persp);
+  U.uPersp.value = P.persp; U.uBreath.value = P.breath; U.uTime.value = simTime;
+  rotA.fill(0); rotA[0] = rotA[5] = rotA[10] = rotA[15] = 1;
+  rotMul(0, 2, P.th1); rotMul(1, 3, P.th2); rotMul(0, 1, P.xy); rotMul(0, 3, P.xw); rotMul(1, 2, P.yz); rotMul(2, 3, P.alpha);
+  U.uRot.value.set(rotA[0], rotA[1], rotA[2], rotA[3], rotA[4], rotA[5], rotA[6], rotA[7], rotA[8], rotA[9], rotA[10], rotA[11], rotA[12], rotA[13], rotA[14], rotA[15]);
+  U.uColorMode.value = COLOR_MODES.findIndex(m => m[0] === P.colorMode);
+  U.uOpacity.value = P.opacity;
+  const solid = P.material === 'solid' && P.surface;
+  // 面片越多叠加层越厚：按 n₁·n₂ 归一化亮度
+  const dens = clamp(Math.sqrt(25 / (n1 * n2)), 0.5, 1.5);
+  U.uDens.value = dens;
+  U.uWire.value = (!P.surface ? 1.0 : solid ? 0.5 : P.material === 'veil' ? 0.45 : 0.7) * Math.pow(dens, 0.8);
+  surface.visible = P.surface; lines.visible = P.wire; points.visible = P.particles;
+  points.geometry.setDrawRange(0, Math.min(MAX_PARTICLES, Math.round(P.particleCount * 1000)));
+  const dist = camera.position.length();
+  U.uCamDist.value = dist; U.uCamDist2.value = fitDist;
+  const pxScale = renderer.getPixelRatio() * Math.min(W, H) / 900 * (fitDist / dist);
+  U.uPx.value = (P.surface ? 5.0 : 6.0) * pxScale;
+  U.uPtGain.value = (P.surface ? 0.9 : 1.4) * clamp(Math.sqrt(16 / P.particleCount), 0.5, 1.25);
+  starU.uPx.value = 2.6 * renderer.getPixelRatio();
+  bloom.strength = P.bloom; bloom.radius = 0.7; bloom.threshold = 0.55;
+  // palette / background easing
+  const k = dt > 0 ? 1 - Math.exp(-dt * 3.2) : 1;
+  if (palDirty) {
+    let diff = 0;
+    for (let i = 0; i < palCur.length; i++) { const dlt = palTgt[i] - palCur[i]; palCur[i] += dlt * k; diff = Math.max(diff, Math.abs(dlt)); }
+    pushPalette(); if (diff < 0.003) palDirty = false;
+  }
+  const A = bgU.uA.value, B = bgU.uB.value, Tn = starU.uTint.value;
+  A.set(lerp(A.x, bgTarget.a[0], k), lerp(A.y, bgTarget.a[1], k), lerp(A.z, bgTarget.a[2], k));
+  B.set(lerp(B.x, bgTarget.b[0], k), lerp(B.y, bgTarget.b[1], k), lerp(B.z, bgTarget.b[2], k));
+  Tn.set(lerp(Tn.x, bgTarget.c[0], k), lerp(Tn.y, bgTarget.c[1], k), lerp(Tn.z, bgTarget.c[2], k));
+}
+
+/* =====================================================================
+   主循环
+   ===================================================================== */
+let manual = false, last = performance.now(), slowT = 0, fastT = 0, emaDt = 16;
+function step(dt) {
+  updateTween(dt);
+  updateGapAnim(dt);
+  evolve(dt);
+  simTime += dt * P.speed;
+  if (camTween) {
+    camTween.t = Math.min(1, camTween.t + dt / 0.9);
+    const e = 1 - Math.pow(1 - camTween.t, 3);
+    camera.position.setLength(lerp(camTween.from, camTween.to, e));
+    if (camTween.t >= 1) camTween = null;
+  }
+  const ko = dt > 0 ? 1 - Math.exp(-dt * 5) : 1;
+  off.x += (off.tx - off.x) * ko; off.y += (off.ty - off.y) * ko;
+  if (shotMode) camera.clearViewOffset(); else camera.setViewOffset(W, H, off.x, off.y, W, H);
+  bgU.uCenter.value.set(shotMode ? 0 : -off.x / H, shotMode ? 0 : off.y / H);
+  controls.autoRotate = P.spin && P.auto && !pointerDown;
+  controls.update(dt);
+  camera.updateProjectionMatrix();
+  updateUniforms(dt);
+  updateMatch();
+  composer.render(dt);
+  ui.syncHud(); ui.syncMatch();
+}
+function frame(now) {
+  if (manual) return;
+  requestAnimationFrame(frame);
+  const raw = now - last; last = now;
+  const dt = Math.min(0.05, raw / 1000);
+  step(dt);
+  // 自适应分辨率：持续掉帧时降低像素比
+  if (raw < 250) emaDt = lerp(emaDt, raw, 0.05);
+  if (emaDt > 30) { slowT += raw; fastT = 0; } else if (emaDt < 19) { fastT += raw; slowT = 0; } else { slowT = fastT = 0; }
+  if (slowT > 2500 && pixelRatio > 0.8) { pixelRatio = Math.max(0.75, pixelRatio - 0.25); slowT = 0; emaDt = 20; resize(); }
+}
+
+/* =====================================================================
+   界面
+   ===================================================================== */
+const ui = (function () {
+  const root = $('#scroll'), rows = {}, groups = {};
+  const tabParams = document.createElement('div'), tabMatch = document.createElement('div');
+  tabParams.id = 'tab-params'; tabMatch.id = 'tab-match'; root.append(tabParams, tabMatch);
+  let host = tabParams;
+  const el = (tag, cls, html) => { const e = document.createElement(tag); if (cls) e.className = cls; if (html !== undefined) e.innerHTML = html; return e; };
+  function section(title, en, open) {
+    const s = el('section', open === false ? 'closed' : '');
+    const h = el('h2', '', `${title}<em>${en}</em><i></i>`);
+    h.addEventListener('click', () => s.classList.toggle('closed'));
+    const b = el('div', 'body'); s.append(h, b); host.append(s); return b;
+  }
+  function fmt(k, v) { const d = DEF[k]; return v.toFixed(d.d) + (d.unit || ''); }
+  function slider(parent, k) {
+    const d = DEF[k], row = el('div', 'row'), head = el('div', 'head');
+    if (d.tip) row.title = d.tip;
+    let dot = null;
+    if (d.auto) {
+      dot = el('button', 'dot'); dot.title = '随时间演变';
+      dot.addEventListener('click', () => { P.autos[k] = !P.autos[k]; if (k === 'gap') gapAnim = null; if (P.autos[k]) { syncAuto(k); if (!P.auto) { P.auto = true; } } activePreset = null; syncAll(); });
+    } else head.append(el('span', 'nodot'));
+    const lab = el('label', '', d.label + (d.sub ? `<small>${d.sub}</small>` : ''));
+    const out = el('output');
+    if (dot) head.append(dot); head.append(lab, out);
+    const inp = el('input'); inp.type = 'range'; inp.min = d.min; inp.max = d.max; inp.step = d.step; inp.setAttribute('aria-label', d.label); inp.dataset.k = k;
+    const onInput = () => {
+      let v = parseFloat(inp.value);
+      if (k === 'n' || k === 'n2') { const r = Math.round(v); if (Math.abs(v - r) < 0.045) v = r; }   // 吸附到整数
+      if (tween) { delete tween.to[k]; }
+      if (k === 'gap') { gapAnim = null; if (v > 0.08) sepLast = v; }
+      if (d.int) v = Math.round(v);
+      if (d.sel) P.sepScope = 'one';
+      if (k === 'sampN' && P.sampSel >= 0) P.sampSel = Math.round(P.sampSel / Math.max(1, P.sampN - 1) * (v - 1));
+      P[k] = v; dragging = k; if (!d.view) activePreset = null;
+      if (k === 'n' && P.link) { P.n2 = v; syncNum('n2'); }
+      if (d.auto) syncAuto(k);
+      if (k === 'subdiv' || k === 'wireDensity') syncGeometry();
+      if (d.int || k === 'gap') syncAll(); else { syncNum(k, true); markPreset(); }
+    };
+    inp.addEventListener('input', onInput);
+    const release = () => { if (dragging === k) dragging = null; };
+    inp.addEventListener('change', release); inp.addEventListener('pointerup', release); inp.addEventListener('pointercancel', release); inp.addEventListener('blur', release);
+    lab.addEventListener('dblclick', () => { const v = BASE[k] !== undefined ? BASE[k] : d.def !== undefined ? d.def : P[k]; inp.value = v; onInput(); release(); });
+    row.append(head, inp); parent.append(row);
+    rows[k] = { row, inp, out, dot, shown: null };
+    return row;
+  }
+  function syncNum(k, fromInput) {
+    const r = rows[k]; if (!r) return;
+    const d = DEF[k]; let max = d.max;
+    let v = (k === 'n2' && P.link) ? P.n : P[k];
+    if (d.sel) {      // 选中指标：范围随面片数变化
+      max = Math.max(1, (k === 'selK1' ? patchInfo.c1 : patchInfo.c2) - 1); v = Math.min(Math.round(v), max);
+      if (+r.inp.max !== max) r.inp.max = max;
+    }
+    const txt = fmt(k, v);
+    if (txt !== r.shown) { r.out.textContent = txt; r.shown = txt; }
+    if (!fromInput && dragging !== k) r.inp.value = v;
+    r.row.style.setProperty('--p', ((v - d.min) / (max - d.min) * 100).toFixed(2) + '%');
+  }
+  function seg(parent, key, opts, cb) {
+    const s = el('div', 'seg'), btns = {};
+    opts.forEach(([id, name]) => { const b = el('button', '', name); b.addEventListener('click', () => { P[key] = id; activePreset = null; cb && cb(); syncAll(); }); btns[id] = b; s.append(b); });
+    parent.append(s); groups[key] = btns;
+  }
+  function toggleRow(parent, key, label, small) {
+    const r = el('div', 'sw-row'), sw = el('button', 'switch');
+    r.append(el('span', '', label + (small ? `<small>${small}</small>` : '')), sw);
+    r.addEventListener('click', () => { P[key] = !P[key]; if (key === 'link' && P.link) P.n2 = P.n; if (key !== 'auto' && key !== 'spin') activePreset = null; syncAll(); });
+    parent.append(r); groups[key] = sw; return r;
+  }
+
+  // 预设
+  const sPre = section('预设', 'Presets');
+  const chips = el('div', 'chips'); sPre.append(chips);
+  const chipEls = {};
+  PRESETS.forEach(p => { const c = el('button', 'chip', p.name); c.addEventListener('click', () => applyPreset(p.id)); chipEls[p.id] = c; chips.append(c); });
+
+  // 流形
+  const sMan = section('流形', 'Manifold');
+  slider(sMan, 'n');
+  toggleRow(sMan, 'link', '两个幂次同步', 'n₂ = n');
+  slider(sMan, 'n2'); slider(sMan, 'psi'); slider(sMan, 'psiArg'); slider(sMan, 'neck'); slider(sMan, 'ext');
+
+  // 面片分离
+  const sSep = section('面片分离', 'Separation');
+  const sepBtn = el('button', 'btn sep-btn',
+    '<svg class="i-open" viewBox="0 0 16 16"><path d="M6.5 3.5 2.5 8l4 4.5M9.5 3.5l4 4.5-4 4.5"/></svg>' +
+    '<svg class="i-close" viewBox="0 0 16 16"><path d="M2.5 3.5 6.5 8l-4 4.5M13.5 3.5 9.5 8l4 4.5"/></svg><span></span><kbd>G</kbd>');
+  sepBtn.id = 'btn-sep'; sepBtn.title = '一键分离 / 拼合 (G)';
+  sepBtn.addEventListener('click', toggleSep);
+  sSep.append(sepBtn);
+  slider(sSep, 'gap'); slider(sSep, 'shrink');
+  sSep.append(el('div', 'cap', '分组'));
+  seg(sSep, 'sepGroup', SEP_GROUPS);
+  sSep.append(el('div', 'cap', '分离方向'));
+  seg(sSep, 'sepDir', SEP_DIRS);
+  sSep.append(el('div', 'cap', '作用范围'));
+  seg(sSep, 'sepScope', SEP_SCOPES);
+  slider(sSep, 'selK1'); slider(sSep, 'selK2');
+  sSep.append(el('div', 'note', '双击曲面上的面片可单独抽出，再次双击归位；分组为“k₁ 行 / k₂ 列”时抽出的是整组。'));
+
+  // 四维
+  const sRot = section('四维旋转与投影', '4D Rotation');
+  ['alpha', 'th1', 'th2', 'xw', 'yz', 'xy', 'persp'].forEach(k => slider(sRot, k));
+
+  // 演变
+  const sEvo = section('演变', 'Evolution');
+  toggleRow(sEvo, 'auto', '自动演变', '空格');
+  toggleRow(sEvo, 'spin', '相机缓慢环绕');
+  slider(sEvo, 'speed'); slider(sEvo, 'breath');
+  sEvo.append(el('div', 'note', '点亮参数名左侧的圆点<b></b>，该参数即随时间自行演变；可同时点亮多个维度。'));
+
+  // 外观
+  const sLook = section('外观', 'Appearance');
+  sLook.append(el('div', 'cap', '着色依据'));
+  seg(sLook, 'colorMode', COLOR_MODES);
+  sLook.append(el('div', 'cap', '色板'));
+  const sws = el('div', 'swatches'), swEls = {};
+  Object.keys(PALETTES).forEach(id => {
+    const p = PALETTES[id], b = el('button', 'sw', `<span>${p.name}</span>`); b.title = p.name;
+    b.style.background = `conic-gradient(from 210deg, ${p.stops.concat(p.stops[0]).join(',')})`;
+    b.addEventListener('click', () => { P.palette = id; activePreset = null; setPalette(id); syncAll(); });
+    swEls[id] = b; sws.append(b);
+  });
+  sLook.append(sws);
+  sLook.append(el('div', 'cap', '材质'));
+  seg(sLook, 'material', MATERIALS, applyMaterial);
+  slider(sLook, 'opacity');
+  sLook.append(el('div', 'cap', '图层'));
+  const tgs = el('div', 'toggles'), tgEls = {};
+  [['surface', '曲面'], ['wire', '线框'], ['particles', '粒子']].forEach(([k, name]) => {
+    const b = el('button', 'tg', name);
+    b.addEventListener('click', () => { P[k] = !P[k]; if (!P.surface && !P.wire && !P.particles) P[k] = true; activePreset = null; syncAll(); });
+    tgEls[k] = b; tgs.append(b);
+  });
+  sLook.append(tgs);
+  slider(sLook, 'wireDensity'); slider(sLook, 'particleCount'); slider(sLook, 'bloom'); slider(sLook, 'subdiv');
+
+
+  // ===== 解 ↔ 线：逐一对照 =====
+  host = tabMatch;
+  const sFx = section('公式', 'Solutions');
+  const nseg = el('div', 'seg nseg'), nBtns = {};
+  [2, 3, 4, 5, 6].forEach(v => { const b = el('button', '', 'n = ' + v); b.addEventListener('click', () => quickN(v)); nBtns[v] = b; nseg.append(b); });
+  const fx = el('div', 'fx');
+  sFx.append(nseg, fx);
+
+  const sLeg = section('面片 ↔ 解', 'Branches');
+  const mtg = el('div', 'toggles'), soloBtn = el('button', 'tg', '仅显示选中'), colBtn = el('button', 'tg', '按面片着色');
+  soloBtn.id = 'btn-solo'; colBtn.id = 'btn-bypatch';
+  soloBtn.addEventListener('click', () => { P.solo = !P.solo; syncAll(); });
+  colBtn.addEventListener('click', () => {
+    if (P.colorMode === 'patch') { P.colorMode = M.prevColor || 'phase'; M.prevColor = null; } else { M.prevColor = P.colorMode; P.colorMode = 'patch'; }
+    activePreset = null; syncAll();
+  });
+  mtg.append(soloBtn, colBtn);
+  const leg = el('div', 'leg');
+  leg.addEventListener('pointerleave', () => { M.hoverPatch = null; });
+  sLeg.append(mtg, leg, el('div', 'note', '点一行或直接点曲面即可选中，双击曲面把这一片抽出来。'));
+
+  const sPts = section('采样点 ↔ 数值', 'Samples');
+  const tbl = el('div', 'pts'), det = el('div', 'det');
+  tbl.addEventListener('pointerleave', () => { M.hoverPt = -1; });
+  sPts.append(tbl, det);
+  const mseg = el('div', 'seg'), modeBtns = {};
+  [['even', '沿线均匀取点'], ['r', 'r 等距取点']].forEach(([id, name]) => { const b = el('button', '', name); b.dataset.mode = id; b.addEventListener('click', () => { P.sampMode = id; syncAll(); }); modeBtns[id] = b; mseg.append(b); });
+  sPts.append(mseg);
+  slider(sPts, 'sampN'); slider(sPts, 'sampY');
+  sPts.append(el('div', 'note', '表里的编号就是图上亮线上的编号点：悬停或点选任意一方，另一方同步高亮。'));
+  host = tabParams;
+
+  const isTwo = n => Math.abs(n - 2) < 0.005;
+  const sub12 = i => `z<sub>${i}</sub>`;
+  function rootHTML(inner, n, paren) { return isTwo(n) ? `√<span class="ov">${inner}</span>` : `${paren ? '(' + inner + ')' : inner}<sup>1/${num(n)}</sup>`; }
+  // 单位根因子：n = 2 时写成 ±，否则写成 ω 的幂（long 时展开成 e^{2πi·k/n}）
+  function facHTML(k, n, w, long) {
+    if (isTwo(n)) return k ? '−' : '+';
+    if (k === 0) return '';
+    return long ? `e<sup>2πi·${k}/${num(n)}</sup>·` : w + (k === 1 ? '' : `<sup>${k}</sup>`) + '·';
+  }
+  function branchHTML(k1, k2, long, sep) {
+    const n1 = U.uN1.value, n2 = U.uN2.value, same = Math.abs(n1 - n2) < 0.005, s = Math.abs(U.uNeck.value - 1) > 0.004 ? 's·' : '';
+    return `${sub12(1)} = ${s}${facHTML(k1, n1, same ? 'ω' : 'ω<sub>1</sub>', long)}${rootHTML('r', n1)}${sep}${sub12(2)} = ${s}${facHTML(k2, n2, same ? 'ω' : 'ω<sub>2</sub>', long)}${rootHTML('1−r', n2, true)}`;
+  }
+  const tabBtns = {}; let tab = 'params'; const tabScroll = { params: 0, match: 0 };
+  document.querySelectorAll('#tabs .tab').forEach(b => {
+    tabBtns[b.dataset.tab] = b;
+    b.addEventListener('click', () => {
+      setTab(b.dataset.tab);
+      if (mqMobile.matches && document.body.classList.contains('sheet-peek')) { document.body.classList.remove('sheet-peek'); relayout(); }
+    });
+  });
+  function setTab(id) {
+    if (id !== 'match') id = 'params';
+    if (id === tab) return;
+    tabScroll[tab] = root.scrollTop; tab = id;
+    document.body.classList.toggle('tab-match', id === 'match');
+    for (const t in tabBtns) tabBtns[t].classList.toggle('on', t === id);
+    root.scrollTop = tabScroll[id];
+    setMatch(id === 'match');
+  }
+  function revealPt(j) {
+    const r = tblRows[j]; if (!r || tab !== 'match' || !r.offsetParent) return;
+    const a = r.getBoundingClientRect(), b = root.getBoundingClientRect();
+    if (a.top < b.top + 14) root.scrollTop -= b.top + 14 - a.top; else if (a.bottom > b.bottom - 18) root.scrollTop += a.bottom - b.bottom + 18;
+  }
+
+  let legKey = '', legRows = [], legF = '', legC = '', legSel = '', legClick = false;
+  let fxKey = '', brKey = '', tblN = -1, tblRows = [], tblKey = '', detKey = '', tblAct = '';
+  const branchEl = $('#branch');
+  function syncMatch() {
+    if (!P.match) return;
+    const c1 = patchInfo.c1, c2 = patchInfo.c2, n1 = U.uN1.value, n2 = U.uN2.value, [k1, k2] = selClamped();
+    const necked = Math.abs(U.uNeck.value - 1) > 0.004, psiOn = U.uMu.value > 1e-5, same = Math.abs(n1 - n2) < 0.005;
+    const nKey = n1.toFixed(2) + '/' + n2.toFixed(2) + '/' + (necked ? U.uNeck.value.toFixed(3) : '') + '/' + (psiOn ? P.psi.toFixed(2) + '∠' + P.psiArg.toFixed(0) : '');
+    // ---- 图例：一组解一行
+    if (c1 + 'x' + c2 !== legKey) {
+      legKey = c1 + 'x' + c2; leg.textContent = ''; legRows = []; legF = legC = legSel = '';
+      for (let a = 0; a < c1; a++) for (let b = 0; b < c2; b++) {
+        const it = el('button', 'it', `<i class="pc"></i><b>k₁=${a}, k₂=${b}</b><span class="m"></span>`);
+        it.dataset.k = a + ',' + b;
+        it.addEventListener('click', () => { legClick = true; setSel(a, b); });
+        it.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') M.hoverPatch = [a, b]; });
+        leg.append(it); legRows.push({ it, a, b, chip: it.firstChild, m: it.lastChild });
+      }
+    }
+    if (nKey !== legF) { legF = nKey; for (const r of legRows) r.m.innerHTML = branchHTML(r.a, r.b, false, '&emsp;'); }
+    const cKey = legKey + P.palette + P.colorMode + n1.toFixed(2) + n2.toFixed(2);
+    if (cKey !== legC) { legC = cKey; for (const r of legRows) { const c = rgbCss(patchRGB(r.a, r.b)); r.chip.style.background = c; r.chip.style.color = c; } brKey = fxKey = ''; }
+    if (k1 + ',' + k2 !== legSel) {
+      legSel = k1 + ',' + k2;
+      for (const r of legRows) {
+        const on = r.a === k1 && r.b === k2; r.it.classList.toggle('on', on);
+        if (on && !legClick && leg.clientHeight) { const t = r.it.offsetTop, h = r.it.offsetHeight + 3; if (t < leg.scrollTop + 3) leg.scrollTop = t - 3; else if (t + h > leg.scrollTop + leg.clientHeight) leg.scrollTop = t + h - leg.clientHeight; }
+      }
+      legClick = false;
+    }
+    // ---- 实时公式栏
+    const css = rgbCss(patchRGB(k1, k2)), fKey = nKey + '|' + legSel + '|' + c1 + 'x' + c2;
+    if (fKey !== fxKey) {
+      fxKey = fKey;
+      const nb = (n1 + n2) / 2, two = isTwo(n1) && isTwo(n2), frac = Math.abs(n1 - Math.round(n1)) > 0.005 || Math.abs(n2 - Math.round(n2)) > 0.005;
+      let eqn = `${sub12(1)}<sup>${num(n1)}</sup> + ${sub12(2)}<sup>${num(n2)}</sup>` + (psiOn ? ` − ${num(nb)}ψ ${sub12(1)}${sub12(2)}` : '') + (necked ? ' = c' : ' = 1');
+      const s = necked ? 's·' : '';
+      const g1 = isTwo(n1) ? `±${rootHTML('r', n1)}` : `${same ? 'ω' : 'ω<sub>1</sub>'}<sup>k₁</sup>·${rootHTML('r', n1)}`;
+      const g2 = isTwo(n2) ? `±${rootHTML('1−r', n2, true)}` : `${same ? 'ω' : 'ω<sub>2</sub>'}<sup>k₂</sup>·${rootHTML('1−r', n2, true)}`;
+      let note;
+      if (two) note = '两个 ± 各自独立，共 2 × 2 = 4 组解，正好对应图上的 4 片曲面。';
+      else {
+        const om = same ? `ω = e<sup>2πi/${num(n1)}</sup>` : `ω<sub>1</sub> = e<sup>2πi/${num(n1)}</sup>，ω<sub>2</sub> = e<sup>2πi/${num(n2)}</sup>`;
+        note = `${om}；k₁ 取 0…${c1 - 1}，k₂ 取 0…${c2 - 1}，共 ${c1} × ${c2} = ${c1 * c2} 组解，一组解就是图上的一片曲面。`;
+      }
+      note += ' r 是面片上的复参数，根式取主值。';
+      if (frac) note += ' n 不是整数时，最后一圈面片尚未闭合。';
+      if (necked) note += ` s = ${U.uNeck.value.toFixed(2)} 是“截面收缩”系数` + (same ? `，c = s<sup>n</sup> = ${Math.pow(U.uNeck.value, n1).toFixed(3)}。` : '。');
+      if (psiOn) note += ' ψ ≠ 0 时没有这样的闭式解：以上是 ψ = 0 时的起点，每个点再沿 ψ 数值延拓到形变后的曲面上，下表给出的是延拓后的解。';
+      const val = (k, n) => (isTwo(n) || k === 0) ? '' : `<div>e<sup>2πi·${k}/${num(n)}</sup> = ${fmtC(Math.cos(TAU * k / n), Math.sin(TAU * k / n), 3, true)}</div>`;
+      const vals = val(k1, n1) + (k2 === k1 && same ? '' : val(k2, n2));
+      const bl = branchHTML(k1, k2, true, '\u0001').split('\u0001');
+      fx.innerHTML = `<div class="ln"><i>方程</i><span class="m">${eqn}</span></div>` +
+        `<div class="ln"><i>通解</i><span class="m">${sub12(1)} = ${s}${g1}，&ensp;${sub12(2)} = ${s}${g2}</span></div>` +
+        `<div class="sub">${note}</div>` +
+        `<div class="ln cur"><i>当前</i><span class="pc" style="background:${css};color:${css}"></span><b>k₁ = ${k1}，k₂ = ${k2}</b>${two ? `<span class="v">（${k1 ? '−' : '+'}，${k2 ? '−' : '+'}）</span>` : ''}</div>` +
+        `<div class="ln"><i></i><span class="m">${bl[0]}</span></div>` +
+        `<div class="ln"><i></i><span class="m">${bl[1]}</span></div>` + (vals ? `<div class="val">${vals}</div>` : '');
+      for (const v in nBtns) nBtns[v].classList.toggle('on', same && Math.abs(n1 - v) < 0.005);
+    }
+    if (fKey !== brKey) {
+      brKey = fKey;
+      branchEl.innerHTML = `<span class="pc" style="background:${css};color:${css}"></span><b>k₁ = ${k1}，k₂ = ${k2}</b><span class="m">${branchHTML(k1, k2, false, '，&ensp;')}</span>`;
+    }
+    // ---- 采样点数值表
+    const S = M.samples, N = S.length, act = activePt();
+    if (N !== tblN) {
+      tblN = N; tblKey = detKey = tblAct = ''; tbl.textContent = ''; tblRows = [];
+      tbl.append(el('div', 'tr th', `<span>#</span><span>r</span><span>${sub12(1)}</span><span>${sub12(2)}</span>`));
+      for (let j = 0; j < N; j++) {
+        const r = el('button', 'tr', `<span>${j + 1}</span><span></span><span></span><span></span>`);
+        r.dataset.j = j;
+        r.addEventListener('click', () => lockPt(j));
+        r.addEventListener('pointerenter', e => { if (e.pointerType === 'mouse') M.hoverPt = j; });
+        tbl.append(r); tblRows.push(r);
+      }
+    }
+    const vKey = [n1, n2, U.uMu.value, U.uPsiArg.value, U.uNeck.value, U.uYext.value, P.sampY].map(v => v.toFixed(4)).join() + '|' + legSel + '|' + N + P.sampMode;
+    if (vKey !== tblKey) {
+      tblKey = vKey; detKey = '';
+      for (let j = 0; j < N; j++) {
+        const s = S[j], c = tblRows[j].children;
+        c[1].textContent = Math.abs(s.r[1]) < 5e-4 ? fmtR(s.r[0], 3) : fmtC(s.r[0], s.r[1], 2);
+        c[2].textContent = fmtC(s.z1[0], s.z1[1], 3); c[3].textContent = fmtC(s.z2[0], s.z2[1], 3);
+      }
+    }
+    for (const id in modeBtns) { const on = P.sampMode === id; if (modeBtns[id].classList.contains('on') !== on) modeBtns[id].classList.toggle('on', on); }
+    const aKey = P.sampSel + '/' + M.hoverPt;
+    if (aKey !== tblAct) { tblAct = aKey; tblRows.forEach((r, j) => { r.classList.toggle('on', j === P.sampSel); r.classList.toggle('hv', j === M.hoverPt); }); }
+    const dKey = vKey + '|' + act + '|' + css;
+    if (dKey !== detKey) {
+      detKey = dKey;
+      const s = S[act];
+      if (!s) det.innerHTML = '<div class="nt">悬停或点选上表中的一行，或图上亮线上的编号点，这里给出该点的完整数值与代回验证。</div>';
+      else {
+        const pol = z => { const m = Math.hypot(z[0], z[1]); return `|z| ${m.toFixed(3)}` + (m > 1e-6 ? ` ∠ ${fmtR(Math.atan2(z[1], z[0]) * 180 / Math.PI, 1)}°` : ''); };
+        const v1 = necked ? `(${sub12(1)}/s)` : sub12(1), v2 = necked ? `(${sub12(2)}/s)` : sub12(2), nb = (n1 + n2) / 2;
+        const lhs = `${v1}<sup>${num(n1)}</sup> + ${v2}<sup>${num(n2)}</sup>` + (psiOn ? ` − ${num(nb)}ψ ${v1}${v2}` : '');
+        const err = Math.hypot(s.chk[0] - 1, s.chk[1]);
+        let nt = '';
+        if (Math.hypot(s.z1[0], s.z1[1]) < 1e-6) nt = `这里 ${sub12(1)} = 0：k₁ 不同、k₂ 相同的 ${c1} 组解在这一点重合，所以 ${c1} 片曲面在此相接。`;
+        else if (Math.hypot(s.z2[0], s.z2[1]) < 1e-6) nt = `这里 ${sub12(2)} = 0：k₂ 不同、k₁ 相同的 ${c2} 组解在这一点重合，所以 ${c2} 片曲面在此相接。`;
+        det.innerHTML = `<div class="hd"><span class="pc" style="background:${css};color:${css}"></span>点 ${act + 1}<span>r = ${Math.abs(s.r[1]) < 5e-5 ? fmtR(s.r[0], 4) : fmtC(s.r[0], s.r[1], 4, true)}</span></div>` +
+          `<div class="ln"><i class="m">${sub12(1)}</i><b>${fmtC(s.z1[0], s.z1[1], 4, true)}</b><em>${pol(s.z1)}</em></div>` +
+          `<div class="ln"><i class="m">${sub12(2)}</i><b>${fmtC(s.z2[0], s.z2[1], 4, true)}</b><em>${pol(s.z2)}</em></div>` +
+          `<div class="ln chk"><i>代回</i><span class="m">${lhs}</span><b>= ${fmtC(s.chk[0], s.chk[1], 4, true)}</b><em>${err < 5e-4 ? '✓' : '≈'}</em></div>` +
+          (nt ? `<div class="nt">${nt}</div>` : '');
+      }
+    }
+  }
+
+  function markPreset() { for (const id in chipEls) chipEls[id].classList.toggle('on', id === activePreset); }
+  function syncAll() {
+    NUM_KEYS.forEach(k => syncNum(k));
+    for (const k of AUTO_KEYS) rows[k].dot.classList.toggle('on', !!P.autos[k] && !(k === 'n2' && P.link));
+    rows.n2.row.classList.toggle('off', P.link);
+    rows.opacity.row.classList.toggle('off', P.material === 'solid' || !P.surface);
+    rows.psiArg.row.classList.toggle('off', P.psi < 0.004 && !P.autos.psi);
+    rows.wireDensity.row.classList.toggle('off', !P.wire);
+    rows.particleCount.row.classList.toggle('off', !P.particles);
+    rows.bloom.row.classList.toggle('off', !hdrOK);
+    rows.selK1.row.classList.toggle('off', P.sepGroup === 'col');
+    rows.selK2.row.classList.toggle('off', P.sepGroup === 'row');
+    const open = sepIsOpen();
+    sepBtn.classList.toggle('open', open);
+    sepBtn.querySelector('span').textContent = open ? '拼合' : '分离';
+    for (const key of ['colorMode', 'material', 'sepGroup', 'sepDir', 'sepScope']) for (const id in groups[key]) groups[key][id].classList.toggle('on', P[key] === id);
+    for (const key of ['link', 'auto', 'spin']) groups[key].classList.toggle('on', !!P[key]);
+    for (const id in swEls) swEls[id].classList.toggle('on', P.palette === id);
+    for (const k in tgEls) tgEls[k].classList.toggle('on', !!P[k]);
+    soloBtn.classList.toggle('on', !!P.solo); colBtn.classList.toggle('on', P.colorMode === 'patch');
+    document.body.classList.toggle('paused', !P.auto);
+    markPreset();
+  }
+  const eq = $('#eq'), meta = $('#meta'); let eqShown = '', metaShown = '', selKey = '';
+  const num = v => (Math.abs(v - Math.round(v)) < 0.005 ? String(Math.round(v)) : v.toFixed(2));
+  function syncHud() {
+    const n1 = P.n, n2 = P.link ? P.n : P.n2, nb = (n1 + n2) / 2;
+    let s = `z<sub>1</sub><sup>${num(n1)}</sup> + z<sub>2</sub><sup>${num(n2)}</sup>`;
+    if (P.psi > 0.004) s += ` − ${num(nb)}ψ z<sub>1</sub>z<sub>2</sub>`;
+    s += Math.abs(P.neck - 1) > 0.004 ? ' = c' : ' = 1';
+    if (s !== eqShown) { eq.innerHTML = s; eqShown = s; }
+    const m = `${patchInfo.c1} × ${patchInfo.c2} 面片 · α ${P.alpha.toFixed(0)}°` + (P.psi > 0.004 ? ` · ψ ${P.psi.toFixed(2)}ψ*` : '') + (Math.abs(P.neck - 1) > 0.004 ? ` · |c|^(1/n) ${P.neck.toFixed(2)}` : '') + (P.gap > 0.004 ? ` · 间隙 ${P.gap.toFixed(2)}` : '');
+    if (m !== metaShown) { meta.textContent = m; metaShown = m; }
+    const sk = patchInfo.c1 + '/' + patchInfo.c2;
+    if (sk !== selKey) { selKey = sk; syncNum('selK1'); syncNum('selK2'); }
+    const open = sepIsOpen();
+    if (open !== sepBtn.classList.contains('open')) { sepBtn.classList.toggle('open', open); sepBtn.querySelector('span').textContent = open ? '拼合' : '分离'; }
+  }
+  return { syncNum, syncAll, syncHud, markPreset, syncMatch, setTab, revealPt, get tab() { return tab; } };
+})();
+
+/* ---------- 交互 ---------- */
+let pointerDown = false;
+// 双击 / 双指轻点两下：拾取面片并抽出
+let tap = null, lastTap = null;
+canvas.addEventListener('pointerdown', e => {
+  pointerDown = true; $('#hint').classList.add('gone');
+  tap = e.isPrimary ? { x: e.clientX, y: e.clientY, t: e.timeStamp, id: e.pointerId } : null;
+});
+canvas.addEventListener('pointerup', e => {
+  if (!tap || e.pointerId !== tap.id) return;
+  const still = Math.hypot(e.clientX - tap.x, e.clientY - tap.y) < 8 && e.timeStamp - tap.t < 350;
+  tap = null;
+  if (!still) { lastTap = null; return; }
+  if (lastTap && e.timeStamp - lastTap.t < 450 && Math.hypot(e.clientX - lastTap.x, e.clientY - lastTap.y) < 28) { lastTap = null; pickAt(e.clientX, e.clientY); return; }
+  lastTap = { x: e.clientX, y: e.clientY, t: e.timeStamp };
+  if (P.match) {      // 对照模式：点编号点 → 锁定该行；点面片 → 选中这组解
+    const j = markerAt(e.clientX, e.clientY);
+    if (j >= 0) { lockPt(j, true); return; }
+    const hit = pickPatch(e.clientX, e.clientY); if (hit) setSel(hit[0], hit[1]);
+  }
+});
+canvas.addEventListener('pointermove', e => {
+  if (!P.match || pointerDown || e.pointerType !== 'mouse') return;
+  const j = markerAt(e.clientX, e.clientY);
+  if (j !== M.hoverPt) { M.hoverPt = j; canvas.style.cursor = j >= 0 ? 'pointer' : ''; }
+});
+canvas.addEventListener('pointerleave', () => { if (M.hoverPt >= 0) { M.hoverPt = -1; canvas.style.cursor = ''; } });
+window.addEventListener('pointerup', () => { pointerDown = false; });
+window.addEventListener('pointercancel', () => { pointerDown = false; });
+canvas.addEventListener('wheel', () => { camTween = null; }, { passive: true });
+setTimeout(() => $('#hint').classList.add('gone'), 14000);
+
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); clearTimeout(toast.h); toast.h = setTimeout(() => t.classList.remove('show'), 2200); }
+function setUiHidden(h) { document.body.classList.toggle('ui-hidden', h); relayout(); }
+$('#btn-hide').addEventListener('click', () => setUiHidden(true));
+$('#open').addEventListener('click', () => setUiHidden(false));
+$('#btn-reset').addEventListener('click', () => { sepLast = 0.55; P.solo = false; P.sampN = 5; P.sampY = 0; P.sampSel = 2; P.sampMode = 'even'; applyPreset('quintic'); camTween = { from: camera.position.length(), to: fitDist, t: 0 }; });
+$('#btn-rand').addEventListener('click', randomize);
+$('#btn-full').addEventListener('click', () => {
+  const d = document, e = d.documentElement;
+  if (d.fullscreenElement || d.webkitFullscreenElement) (d.exitFullscreen || d.webkitExitFullscreen).call(d);
+  else if (e.requestFullscreen || e.webkitRequestFullscreen) (e.requestFullscreen || e.webkitRequestFullscreen).call(e);
+  else toast('当前浏览器不支持全屏');
+});
+// bottom sheet (mobile)
+(function () {
+  const grab = $('#grab'), head = $('#panel header'); let y0 = null, moved = false;
+  const toggle = () => { document.body.classList.toggle('sheet-peek'); relayout(); };
+  head.addEventListener('pointerdown', e => { if (!mqMobile.matches || e.target.closest('.icon-btn, .tab')) return; y0 = e.clientY; moved = false; });
+  window.addEventListener('pointermove', e => {
+    if (y0 === null) return; const dy = e.clientY - y0;
+    if (Math.abs(dy) > 24) { const peek = document.body.classList.contains('sheet-peek'); if ((dy < 0 && peek) || (dy > 0 && !peek)) toggle(); moved = true; y0 = null; }
+  });
+  window.addEventListener('pointerup', () => { if (y0 !== null && !moved) toggle(); y0 = null; });
+})();
+
+function screenshot() {
+  const pr0 = pixelRatio;
+  const pr = Math.max(1, Math.min(Math.max(2, pr0), 4096 / Math.max(W, H)));
+  shotMode = true; pixelRatio = pr; resize();
+  const d0 = camera.position.length(); camera.position.setLength(clamp(fitDist * zoomK, controls.minDistance, controls.maxDistance));
+  step(0);
+  let done = false;
+  const finish = blob => {
+    if (done) return; done = true;
+    if (blob) {
+      const a = document.createElement('a'), t = new Date(), z = x => String(x).padStart(2, '0');
+      a.download = `calabi-yau-n${(+P.n).toFixed(2)}-${t.getFullYear()}${z(t.getMonth() + 1)}${z(t.getDate())}-${z(t.getHours())}${z(t.getMinutes())}${z(t.getSeconds())}.png`;
+      a.href = URL.createObjectURL(blob); document.body.append(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+      toast(`已保存截图 · ${canvas.width} × ${canvas.height}`);
+    } else toast('截图失败');
+  };
+  try { canvas.toBlob(finish, 'image/png'); } catch (e) { finish(null); }
+  shotMode = false; pixelRatio = pr0; resize(); camera.position.setLength(d0); step(0);
+}
+$('#btn-shot').addEventListener('click', screenshot);
+
+window.addEventListener('keydown', e => {
+  if (e.target && /INPUT|TEXTAREA/.test(e.target.tagName) && e.target.type !== 'range') return;
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if (k === 'h') setUiHidden(!document.body.classList.contains('ui-hidden'));
+  else if (e.code === 'Space') { e.preventDefault(); P.auto = !P.auto; ui.syncAll(); toast(P.auto ? '自动演变 · 开' : '自动演变 · 暂停'); }
+  else if (k === 's') screenshot();
+  else if (k === 'r') randomize();
+  else if (k === 'g') toggleSep();
+  else if (k === 'm') { if (document.body.classList.contains('ui-hidden')) setUiHidden(false); ui.setTab(ui.tab === 'match' ? 'params' : 'match'); }
+  else if (P.match && /^arrow/.test(k) && !(e.target && e.target.type === 'range')) {      // 方向键：换一组解
+    e.preventDefault();
+    const [a, b] = selClamped(), c1 = patchInfo.c1, c2 = patchInfo.c2;
+    if (k === 'arrowleft') setSel((a + c1 - 1) % c1, b); else if (k === 'arrowright') setSel((a + 1) % c1, b);
+    else if (k === 'arrowup') setSel(a, (b + c2 - 1) % c2); else setSel(a, (b + 1) % c2);
+  }
+  else if (k === '[' || k === ']') {
+    gapAnim = null; P.autos.gap = false; activePreset = null;
+    P.gap = clamp(Math.round((P.gap + (k === ']' ? 0.05 : -0.05)) * 100) / 100, 0, DEF.gap.max);
+    if (P.gap > 0.08) sepLast = P.gap;
+    ui.syncAll();
+  }
+  else if (/^[0-9]$/.test(k)) { const p = PRESETS[(+k + 9) % 10]; if (p) applyPreset(p.id); }
+  else if (k === '-' || k === '=') { const p = PRESETS[k === '-' ? 10 : 11]; if (p) applyPreset(p.id); }
+});
+window.addEventListener('resize', resize);
+mqMobile.addEventListener && mqMobile.addEventListener('change', resize);
+canvas.addEventListener('webglcontextlost', e => { e.preventDefault(); toast('图形上下文丢失，正在恢复…'); });
+
+/* ---------- 启动 ---------- */
+setPalette(P.palette, true);
+bgU.uA.value.set(...bgTarget.a); bgU.uB.value.set(...bgTarget.b); starU.uTint.value.set(...bgTarget.c);
+applyMaterial();
+W = window.innerWidth; H = window.innerHeight; computeFit(); camera.position.setLength(fitDist);
+resize(); camera.position.setLength(fitDist); off.x = off.tx; off.y = off.ty;
+const startPreset = QS.get('preset');
+if (startPreset && PRESETS.some(p => p.id === startPreset)) applyPreset(startPreset, true);
+// ?gap=0.6 初始间隙；?group=patch|row|col 分组方式
+const qGap = parseFloat(QS.get('gap')), qGroup = QS.get('group');
+if (isFinite(qGap)) { P.gap = clamp(qGap, 0, DEF.gap.max); P.autos.gap = false; if (P.gap > 0.08) sepLast = P.gap; activePreset = null; }
+if (SEP_GROUPS.some(g => g[0] === qGroup)) { P.sepGroup = qGroup; activePreset = null; }
+// ?match 打开「解 ↔ 线」对照；?match=1,2 同时选中 k₁=1, k₂=2；?solo 仅显示选中
+if (QS.has('match')) {
+  const mk = (QS.get('match') || '').split(',').map(Number);
+  if (mk.length === 2 && mk.every(v => Number.isInteger(v) && v >= 0 && v < 9)) { P.selK1 = mk[0]; P.selK2 = mk[1]; }
+  if (QS.has('solo')) P.solo = true;
+  ui.setTab('match');
+  if (mqMobile.matches) document.body.classList.remove('sheet-peek');
+}
+ui.syncAll();
+if (QS.has('clean')) document.body.classList.add('ui-hidden'), relayout(), off.x = off.tx, off.y = off.ty;
+
+// 调试 / 录制接口
+window.CY = {
+  P, DEF, PRESETS, applyPreset, applyState, randomize, screenshot, step, toggleSep, animateGap, pickPatch, pickAt,
+  setTab: id => ui.setTab(id), setSel, lockPt, quickN, match: M, sepW, U,
+  dbg: { markSel: () => Array.from(markPts.geometry.attributes.aSel.array), markCount: () => markPts.visible ? markPts.geometry.drawRange.count : 0 },
+  setManual(m) { manual = !!m; if (!manual) { last = performance.now(); requestAnimationFrame(frame); } },
+  set(k, v) { P[k] = v; if (DEF[k] && DEF[k].auto) syncAuto(k); if (k === 'palette') setPalette(v); if (k === 'material') applyMaterial(); syncGeometry(); ui.syncAll(); },
+  get info() { return { pixelRatio, W, H, fitDist, dist: camera.position.length(), emaDt, sepLast };  },
+  camera, controls, renderer
+};
+if (QS.has('manual')) { manual = true; step(0); } else requestAnimationFrame(frame);
+document.body.classList.add('ready');
+})();
+</script>
+</body>
+</html>
